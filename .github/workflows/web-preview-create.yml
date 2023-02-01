@@ -17,8 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: "Generate preview url"
-        id: preview-url
+      - name: Generate preview url
+        id: branch-preview-url
         run: |
           BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-38)
           echo "PREVIEW_URL=$BRANCH_SHA.vercel.app" >> $GITHUB_OUTPUT
@@ -26,31 +26,30 @@ jobs:
       - name: Find first vercel preview comment
         uses: peter-evans/find-comment@v2
         if: success() && github.event.number
-        id: fc-first-comment
+        id: first-comment
         with:
           issue-number: ${{ github.event.number }}
           body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
 
-      - name: Get preview environment domain
-        id: vercel-preview-domain
+      - name: Get current preview environment url
+        id: vercel-preview-url
         run: |
-          REGEX="(__VERCEL_PREVIEW_URL: )(.*)( -->)"
-          COMMENT_BODY="${{ steps.fc-first-comment.outputs.comment-body }}"
+          REGEX="(<!-- __VERCEL_PREVIEW_URL: )(.*)( -->)"
+          COMMENT_BODY="${{ steps.first-comment.outputs.comment-body }}"
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
               echo "VERCEL_PREVIEW_URL=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
           else
-              echo "No previous Preview Environment"
+              echo "No previous Preview Environment. SKip!"
           fi
 
-      - name: Create or update comment
+      - name: Create or update deployment comment
         uses: peter-evans/create-or-update-comment@v2
         with:
-          comment-id: ${{ steps.fc-first-comment.outputs.comment-id }}
+          comment-id: ${{ steps.first-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ## 🚧 Building preview environment... 🏗️
-
+            ## 🚧 🏗️ Building preview environment... 
             <!-- __VERCEL_DEPLOYMENT__ -->
           edit-mode: replace
           reactions: eyes
@@ -84,32 +83,29 @@ jobs:
       - name: Install Vercel CLI
         run: pnpm add vercel@latest --global
 
-      - name: Install Vercel CLI
-        run: pnpm add vercel@latest --global
-
-      - name: Pull Vercel Environment Information
+      - name: Pull Vercel Preview  Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
-        id: vercel-domain
+        id: vercel-preview
         run: |
           DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-
           echo "VERCEL_PREVIEW_URL=${DOMAIN}" >> $GITHUB_OUTPUT
 
       - name: Alias current deployment
         run: |
           vercel alias \
-            ${{ steps.vercel-domain.outputs.VERCEL_PREVIEW_URL }} \
-            ${{ steps.preview-url.outputs.PREVIEW_URL }} \
+            ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} \
+            ${{ steps.branch-preview-url.outputs.PREVIEW_URL }} \
             --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Remove old preview
+      - name: Remove previous preview environment
         run: |
-          OLD_URL="${{ steps.vercel-preview-domain.outputs.VERCEL_PREVIEW_URL }}"
+          OLD_URL="${{ steps.vercel-preview-url.outputs.VERCEL_PREVIEW_URL }}"
+
           if [ $OLD_URL ]; then
               vercel remove $OLD_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
           else
@@ -131,7 +127,6 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            ## [🧐 Your preview environment is ready! 🎉](https://${{ steps.preview-url.outputs.PREVIEW_URL }})
-
+            ## [🧐 Your preview environment is ready! 🎉](https://${{ steps.branch-preview-url.outputs.PREVIEW_URL }})
             <!-- __VERCEL_DEPLOYMENT__ -->
-            <!-- __VERCEL_PREVIEW_URL: ${{ steps.vercel-domain.outputs.VERCEL_PREVIEW_URL }} -->
+            <!-- __VERCEL_PREVIEW_URL: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
