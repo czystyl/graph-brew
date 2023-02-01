@@ -1,4 +1,4 @@
-name: Create Preview Deployment
+name: Create Preview Environment
 
 on:
   pull_request:
@@ -14,64 +14,66 @@ permissions:
 
 jobs:
   generate-preview-url:
+    name: Generate safe branch URL
     runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.generate-preview-url.outputs.url }}
     steps:
-      - run: echo "elo" > test.txt
+      - name: Generate Branch Preview URL
+        id: generate-preview-url
+        run: |
+          BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-38)
+          echo "url=$BRANCH_SHA.vercel.app" >> $GITHUB_OUTPUT
 
-  red:
-    needs:
-      - generate-preview-url
+  prepare-preview-state:
+    name: Prepare preview deployment state
     runs-on: ubuntu-latest
+    outputs:
+      vercel-preview-url: ${{ steps.vercel-preview-url.outputs.vercel_preview_url }}
     steps:
-      - run: cat test.txt
+      - name: Find preview deployment comment
+        uses: peter-evans/find-comment@v2
+        if: success() && github.event.number
+        id: preview-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
+
+      - name: Get current preview environment url
+        id: vercel-preview-url
+        run: |
+          REGEX="(<!-- __VERCEL_PREVIEW_URL: )(.*)( -->)"
+          COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
+
+          if [[ $COMMENT_BODY =~ $REGEX ]]; then
+              echo "vercel_preview_url=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+          else
+              echo "No previous Preview Environment. SKip!"
+          fi
+
+      - name: Create or update preview environment comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 🏗️ Building preview environment...
+            <!-- __VERCEL_DEPLOYMENT__ -->
+          edit-mode: replace
 
   # Deploy-Preview:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - uses: actions/checkout@v3
 
-  #     - name: Generate Branch Preview URL
-  #       id: branch-preview-url
-  #       run: |
-  #         BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-38)
-  #         echo "PREVIEW_URL=$BRANCH_SHA.vercel.app" >> $GITHUB_OUTPUT
-
-  #     - name: Find first vercel preview comment
-  #       uses: peter-evans/find-comment@v2
-  #       if: success() && github.event.number
-  #       id: first-preview-comment
-  #       with:
-  #         issue-number: ${{ github.event.number }}
-  #         body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
-
-  #     - name: Get current preview environment url
-  #       id: vercel-preview-url
-  #       run: |
-  #         REGEX="(<!-- __VERCEL_PREVIEW_URL: )(.*)( -->)"
-  #         COMMENT_BODY="${{ steps.first-preview-comment.outputs.comment-body }}"
-
-  #         if [[ $COMMENT_BODY =~ $REGEX ]]; then
-  #             echo "VERCEL_PREVIEW_URL=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
-  #         else
-  #             echo "No previous Preview Environment. SKip!"
-  #         fi
-
-  #     - name: Create or update deployment comment
-  #       uses: peter-evans/create-or-update-comment@v2
-  #       with:
-  #         comment-id: ${{ steps.first-preview-comment.outputs.comment-id }}
-  #         issue-number: ${{ github.event.pull_request.number }}
-  #         body: |
-  #           ## 🏗️ Building preview environment...
-  #           <!-- __VERCEL_DEPLOYMENT__ -->
-  #         edit-mode: replace
-
   #     - name: Install Node.js
   #       uses: actions/setup-node@v3
   #       with:
   #         node-version: 18
 
-  #     - uses: pnpm/action-setup@v2
+  #     ##
+
+  #     - uses: ppm/action-setup@v2
   #       name: Install pnpm
   #       id: pnpm-install
   #       with:
