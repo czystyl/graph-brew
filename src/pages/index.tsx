@@ -1,6 +1,5 @@
 import Head from "next/head";
 import { Inter } from "@next/font/google";
-import styles from "@/styles/Home.module.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,8 +12,12 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <h1>Graph Brew</h1>
+      <main>
+        <h1>Graph Brew: {process.env.NEXT_PUBLIC_VERCEL_ENV}</h1>
+        <br />
+        <h3>ONLY_PREVIEW: {process.env.NEXT_PUBLIC_ONLY_PREVIEW}</h3>
+        <h3>ONLY_PROD: {process.env.NEXT_PUBLIC_ONLY_PROD}</h3>
+        <h3>ALL_ENV: {process.env.NEXT_PUBLIC_ALL_ENV}</h3>
       </main>
     </>
   );

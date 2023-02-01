@@ -1,4 +1,4 @@
-name: Clear Preview Deployment
+name: Production Deployment
 
 on:
   push:
