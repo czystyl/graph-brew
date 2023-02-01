@@ -25,7 +25,7 @@ jobs:
           BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-38)
           echo "url=$BRANCH_SHA.vercel.app" >> $GITHUB_OUTPUT
 
-  prepare-prev-preview:
+  prepare-preview-state:
     name: Prepare preview deployment state
     runs-on: ubuntu-latest
     outputs:
