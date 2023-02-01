@@ -129,11 +129,11 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - alias-preview
-      - prepare-prev-preview
+      - prepare-preview-state
     steps:
       - name: Remove previous preview environment
         run: |
-          VERCEL_PREVIEW_URL="${{ needs.prepare-prev-preview.outputs.url }}"
+          VERCEL_PREVIEW_URL="${{ needs.prepare-preview-state.outputs.url }}"
 
           if [ $VERCEL_PREVIEW_URL ]; then
               vercel remove $VERCEL_PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
