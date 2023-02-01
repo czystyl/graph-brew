@@ -52,7 +52,6 @@ jobs:
             ## 🚧 🏗️ Building preview environment... 
             <!-- __VERCEL_DEPLOYMENT__ -->
           edit-mode: replace
-          reactions: eyes
 
       - name: Install Node.js
         uses: actions/setup-node@v3
@@ -127,6 +126,6 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            ## [🧐 Your preview environment is ready! 🎉](https://${{ steps.branch-preview-url.outputs.PREVIEW_URL }})
+            ## [🚀 Your preview environment is ready!](https://${{ steps.branch-preview-url.outputs.PREVIEW_URL }})
             <!-- __VERCEL_DEPLOYMENT__ -->
             <!-- __VERCEL_PREVIEW_URL: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
