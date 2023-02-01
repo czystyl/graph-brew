@@ -1,4 +1,4 @@
-name: Clear Vercel Preview Deployment
+name: Clear Preview Deployment
 
 on:
   pull_request:
@@ -14,7 +14,7 @@ permissions:
   issues: write
 
 jobs:
-  clear-preview:
+  Clear-Preview:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -56,5 +56,5 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            ## ❌ Your preview environment is removed!
+            ## ❌ Your preview environment was removed!
             <!-- __VERCEL_DEPLOYMENT__ -->

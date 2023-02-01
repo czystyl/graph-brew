@@ -1,4 +1,4 @@
-name: Vercel Preview Deployment
+name: Create Preview Deployment
 
 on:
   pull_request:
