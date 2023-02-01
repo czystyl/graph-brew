@@ -1,0 +1,60 @@
+name: Clear Vercel Preview Deployment
+
+on:
+  pull_request:
+    types:
+      - closed
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  clear-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Find first vercel preview comment
+        uses: peter-evans/find-comment@v2
+        if: success() && github.event.number
+        id: preview-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
+
+      - name: Get current preview environment url
+        id: vercel-preview-url
+        run: |
+          REGEX="(<!-- __VERCEL_PREVIEW_URL: )(.*)( -->)"
+          COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
+
+          if [[ $COMMENT_BODY =~ $REGEX ]]; then
+              echo "VERCEL_PREVIEW_URL=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+          else
+              echo "No previous Preview Environment. SKip!"
+          fi
+
+      - name: Remove previous preview environment
+        run: |
+          VERCEL_PREVIEW_URL="${{ steps.vercel-preview-url.outputs.VERCEL_PREVIEW_URL }}"
+
+          if [ $VERCEL_PREVIEW_URL ]; then
+              vercel remove $VERCEL_PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
+          else
+              echo "No previous Preview Environment"
+          fi
+
+      - name: Create or update preview link comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## ❌ Your preview environment is removed!
+            <!-- __VERCEL_DEPLOYMENT__ -->
