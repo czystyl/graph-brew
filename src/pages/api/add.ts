@@ -4,17 +4,33 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../db";
 type Data = {
   name: string;
-  users: User[];
+  user: User;
 };
 
 export default async function handler(
-  _req: NextApiRequest,
+  req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  const users = await prisma.user.findMany();
+  const { name, email } = req.query;
+
+  if (
+    !name ||
+    !email ||
+    typeof name !== "string" ||
+    typeof email !== "string"
+  ) {
+    throw new Error("Invalid parameters");
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      name: name,
+      email: email,
+    },
+  });
 
   res.status(200).json({
     name: "John Doe" + process.env.NEXT_PUBLIC_ALL_ENV,
-    users,
+    user,
   });
 }
