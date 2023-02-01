@@ -64,8 +64,6 @@ jobs:
   deploy-preview:
     name: Prepare preview deployment state
     runs-on: ubuntu-latest
-    needs:
-      - prepare-preview-state
     outputs:
       url: ${{ steps.deploy.outputs.url }}
     steps:
