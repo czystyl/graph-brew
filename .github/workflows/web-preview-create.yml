@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Generate preview url
+      - name: Generate Branch Preview URL
         id: branch-preview-url
         run: |
           BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-38)
@@ -111,7 +111,7 @@ jobs:
               echo "No previous Preview Environment"
           fi
 
-      - name: Find preview comment to update
+      - name: Find preview environment comment to update
         uses: peter-evans/find-comment@v2
         if: success() && github.event.number
         id: fc-comment-update
@@ -119,7 +119,7 @@ jobs:
           issue-number: ${{ github.event.number }}
           body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
 
-      - name: Create or update comment
+      - name: Create or update preview link comment
         uses: peter-evans/create-or-update-comment@v2
         with:
           comment-id: ${{ steps.fc-comment-update.outputs.comment-id }}
