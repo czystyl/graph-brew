@@ -37,9 +37,7 @@ jobs:
           REGEX="(__VERCEL_PREVIEW_URL: )(.*)( -->)"
           COMMENT_BODY="${{ steps.fc-first-comment.outputs.comment-body }}"
 
-          [[ $COMMENT_BODY =~ $REGEX ]]
-
-          if [[ ${BASH_REMATCH[2]} ]]; then
+          if [[ $COMMENT_BODY =~ $REGEX ]]; then
               echo "VERCEL_PREVIEW_URL=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
           else
               echo "No previous Preview Environment"
