@@ -21,7 +21,7 @@ jobs:
         id: preview-url
         run: |
           BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-38)
-          echo "https://PREVIEW_URL=$BRANCH_SHA.vercel.app" >> $GITHUB_OUTPUT
+          echo "PREVIEW_URL=$BRANCH_SHA.vercel.app" >> $GITHUB_OUTPUT
 
       - name: Find first vercel preview comment
         uses: peter-evans/find-comment@v2
@@ -131,7 +131,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            ## [🧐 Your preview environment is ready! 🎉](${{ steps.preview-url.outputs.PREVIEW_URL }})
+            ## [🧐 Your preview environment is ready! 🎉](https://${{ steps.preview-url.outputs.PREVIEW_URL }})
 
             <!-- __VERCEL_DEPLOYMENT__ -->
             <!-- __VERCEL_PREVIEW_URL: ${{ steps.vercel-domain.outputs.VERCEL_PREVIEW_URL }} -->
