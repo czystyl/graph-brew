@@ -52,10 +52,9 @@ jobs:
       - name: Create or update preview link comment
         uses: peter-evans/create-or-update-comment@v2
         with:
-          comment-id: ${{ steps.first-comment-update.outputs.comment-id }}
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            ## [❌ Your preview environment is removed!](https://${{ steps.branch-preview-url.outputs.PREVIEW_URL }})
+            ## ❌ Your preview environment is removed!
             <!-- __VERCEL_DEPLOYMENT__ -->
-            <!-- __VERCEL_PREVIEW_URL: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
