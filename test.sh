@@ -6,14 +6,13 @@ OUT="
 < __VERCEL_DEPLOYMENT -->
 <!-- __VERCEL_PREVIEW_URL: asd -->"
 
-REGEX="(__VERCEL_PREVIEW_URL: )(.*)( -->)"
-[[ $OUT =~ $REGEX ]]
-
-echo ${BASH_REMATCH[2]}
-
-
-if [ ${BASH_REMATCH[2]} ]; then
-    echo ${BASH_REMATCH[2]}
-else
-    echo "No previous Preview Environment"
-fi
+  REGEX="(__VERCEL_PREVIEW_URL: )(.*)( -->)"
+  COMMENT_BODY=""
+  
+  [[ $COMMENT_BODY =~ $REGEX ]]
+  
+  if [[ ${BASH_REMATCH[2]} ]]; then
+      echo "VERCEL_PREVIEW_URL=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+  else
+      echo "No previous Preview Environment"
+  fi
