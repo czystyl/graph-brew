@@ -85,6 +85,10 @@ jobs:
       - name: Pull Vercel Preview  Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Replace Environment Variables
+        run: |
+          sed -i '/^NEXT_PUBLIC_ALL_ENV=/s/=.*/="33213123!"/' .vercel/.env.preview.local
+
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
