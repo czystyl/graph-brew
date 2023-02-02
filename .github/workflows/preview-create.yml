@@ -38,7 +38,7 @@ jobs:
       - name: Check if Database exists
         id: check-database
         run: |
-          if [[ $(flyctl apps list) =~ duck-brew ]]; then
+          if [[ $(flyctl apps list) =~ ${{ needs.generate-preview-url.outputs.preview-hash }} ]]; then
               echo "database-exists=1" >> $GITHUB_OUTPUT            
           fi
 
