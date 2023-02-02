@@ -47,7 +47,7 @@ jobs:
     needs:
       - check-database
       - generate-preview-url
-    # if: always() && needs.check-database.outputs.database-exists == "true"
+    if: always() && needs.check-database.outputs.database-exists != 1
     env:
       BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
     steps:
