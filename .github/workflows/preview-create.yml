@@ -35,7 +35,7 @@ jobs:
   test-test:
     uses: ./.github/workflows/preview-database.yml
     with:
-      preview-url: $ELO
+      preview-url: ${ELO}
 
   # prepare-preview-state:
   #   name: Prepare preview state
