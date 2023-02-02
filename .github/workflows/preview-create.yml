@@ -26,6 +26,8 @@ jobs:
           echo "url=$BRANCH_SHA.vercel.app" >> $GITHUB_OUTPUT
   app-test:
     uses: ./.github/workflows/preview-database.yml
+    with:
+      preview-url: "test123"
 
   # prepare-preview-state:
   #   name: Prepare preview state
