@@ -2,12 +2,24 @@ APP_NAME="focus-brew-pg"
 
 # flyctl check if app exists
 
-APP_LIST=$(flyctl apps list)
+REGEX="(__PREVIEW_URL: )(.*)( -->)"
+COMMENT_BODY="testing= <-- __PREVIEW_URL: https://focus-brew-pg.fly.dev/ -->"
 
-if [[ $APP_LIST =~ duck-brew ]]; then
-    echo "App exists"
-    exit 1
+# space in bash regex 
+# https://stackoverflow.com/questions/229551/how-to-put-a-space-in-a-bash-variable
+
+
+[[ $COMMENT_BODY =~ $REGEX ]]
+
+echo 2: "${BASH_REMATCH[2]}"
+
+
+if [[ ${BASH_REMATCH[2]} == *"fly.dev"* ]]; then
+    echo "yes"
+else
+    echo "no"
 fi
+
 
 
 # DB_CONNECTION_STRING=""

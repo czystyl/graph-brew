@@ -42,8 +42,13 @@ jobs:
       - name: Get current preview url
         id: preview-url
         run: |
-          REGEX="(<!-- __PREVIEW_URL: )(.*)( -->)"
+          REGEX="(__PREVIEW_URL: )(.*)( -->)"          
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
+
+          [$COMMENT_BODY =~ $REGEX]
+
+          echo 2: "${BASH_REMATCH[2]}"
+
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
               echo "preview_url=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
@@ -71,27 +76,28 @@ jobs:
           body: |
             ## 🏗️ Building preview environment...
             <!-- __PREVIEW_DEPLOYMENT__ -->
+            <!-- __PREVIEW_URL: https://focus-brew-pg.fly.dev/ -->
           edit-mode: replace
 
-  # check-database:
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - generate-preview-url
-  #   outputs:
-  #     database-exists: ${{ steps.check-database.outputs.database-exists }}
-  #   env:
-  #     BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
-  #   steps:
-  #     - uses: superfly/flyctl-actions/setup-flyctl@master
-  #     - name: Check if Database exists
-  #       id: check-database
-  #       run: |
-  #         FLY_APPS=$(flyctl apps list)
-  #         PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
+  check-database:
+    runs-on: ubuntu-latest
+    needs:
+      - generate-preview-url
+    outputs:
+      database-exists: ${{ steps.check-database.outputs.database-exists }}
+    env:
+      BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Check if Database exists
+        id: check-database
+        run: |
+          FLY_APPS=$(flyctl apps list)
+          PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
 
-  #         if [[ FLY_APPS =~ PREVIEW_HASH ]]; then
-  #             echo "database-exists=1" >> $GITHUB_OUTPUT
-  #         fi
+          if [[ FLY_APPS =~ PREVIEW_HASH ]]; then
+              echo "database-exists=1" >> $GITHUB_OUTPUT
+          fi
 
   # create-database:
   #   runs-on: ubuntu-latest
