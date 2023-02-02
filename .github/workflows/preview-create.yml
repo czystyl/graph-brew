@@ -71,8 +71,8 @@ jobs:
           body: |
             ## 🏗️ Building preview environment...
             <!-- __PREVIEW_DEPLOYMENT__ -->
-            <-- __PREVIEW_URL: https://focus-brew-pg.fly.dev/ -->
-            <-- __DATABASE_CONNECTION_STRING: asdasdasd -->
+            <!-- __PREVIEW_URL: https://focus-brew-pg.fly.dev/ -->
+            <!-- __DATABASE_CONNECTION_STRING: asdasdasd -->
           edit-mode: replace
 
   check-database:
