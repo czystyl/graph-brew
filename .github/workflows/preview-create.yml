@@ -41,7 +41,7 @@ jobs:
 
       - run: |
           body="testing123testing"
-          regex="testing(.*)tes"
+          regex="testing (.*)tes"
 
           [[ $body =~ $regex ]]
           echo ${BASH_REMATCH[1]}
