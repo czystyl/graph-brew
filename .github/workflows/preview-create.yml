@@ -52,10 +52,10 @@ jobs:
       #     #   exit 1
       #     # fi
 
-      - run: flyctl ips allocate-v4 --app hello-brew-2
+      # - run: flyctl ips allocate-v4 --app hello-brew-2
       - run: sed "s/__APP_NAME_TEMPLATE__/$APP_NAME/g" fly_postgres_template.toml > fly.toml
       - run: |
-          fly deploy \
+          flyctl deploy \
             --app hello-brew-2 \
             --image flyio/postgres:14 \
             --auto-confirm
