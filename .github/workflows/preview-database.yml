@@ -20,6 +20,7 @@ jobs:
       url: ${{ steps.generate-preview-url.outputs.url }}
     steps:
       - uses: actions/checkout@v3
+      - run: echo e${{ inputs.preview-url }}elo
       - run: echo e${{ secrets.FLY_API_TOKEN }}elo
       - uses: superfly/flyctl-actions/setup-flyctl@master
         # env:

@@ -30,10 +30,10 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl apps list
 
-      - uses: ./.github/workflows/preview-database.yml
-        with:
-          preview-url: "test123"
-          fly-token: ${{ secrets.FLY_API_TOKEN }}
+  test-test:
+    uses: octo-org/example-repo/.github/workflows/reusable-workflow.yml@main
+    with:
+      preview-url: "test123"
 
   # prepare-preview-state:
   #   name: Prepare preview state
