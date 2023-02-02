@@ -30,12 +30,13 @@ jobs:
     needs:
       - generate-preview-url
     outputs:
-      database-exists: ${{ steps.generate-preview-url.outputs.preview-sha }}
+      database-exists: ${{ steps.check-database.outputs.database-exists }}
     env:
       BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Check if Database exists
+        id: check-database
         run: |
           APP_LIST=$(flyctl apps list)
 
