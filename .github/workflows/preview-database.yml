@@ -16,15 +16,15 @@ permissions:
   issues: write
 
 jobs:
-  generate-preview-url:
-    name: Generate preview URL
+  create-database:
+    name: Create Database
     runs-on: ubuntu-latest
     outputs:
       url: ${{ steps.generate-preview-url.outputs.url }}
     steps:
       - uses: actions/checkout@v3
-
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl apps list
 
       - name: Generate Branch Preview URL
         id: generate-preview-url
