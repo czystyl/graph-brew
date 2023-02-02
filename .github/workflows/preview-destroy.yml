@@ -41,7 +41,7 @@ jobs:
         id: preview-comment
         with:
           issue-number: ${{ github.event.number }}
-          body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
+          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
 
       - name: Get current preview environment url
         id: vercel-preview-url
@@ -73,4 +73,4 @@ jobs:
           edit-mode: replace
           body: |
             ## ❌ Your preview environment was removed!
-            <!-- __VERCEL_DEPLOYMENT__ -->
+            <!-- __PREVIEW_DEPLOYMENT__ -->
