@@ -8,13 +8,29 @@ on:
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
 permissions:
   pull-requests: write
   issues: write
 
 jobs:
-  Clear-Preview:
+  remove-database:
+    name: Remove preview database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Generate Branch Preview URL
+        id: generate-preview-url
+        run: |
+          BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-38)
+          echo "preview-sha=$BRANCH_SHA" >> $GITHUB_OUTPUT
+
+      - name: Delete database
+        run: flyctl apps destroy ${{ steps.generate-preview-url.outputs.preview-sha }} --yes
+
+  remove-preview:
+    name: Remove preview environment
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
