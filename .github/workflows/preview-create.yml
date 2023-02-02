@@ -25,9 +25,15 @@ jobs:
           BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-38)
           echo "url=$BRANCH_SHA.vercel.app" >> $GITHUB_OUTPUT
   app-test:
-    uses: ./.github/workflows/preview-database.yml
-    with:
-      preview-url: "test123"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl apps list
+
+    # uses: ./.github/workflows/preview-database.yml
+    # with:
+    # preview-url: "test123"
+    # fly-token: ${{ secrets.FLY_API_TOKEN }}
 
   # prepare-preview-state:
   #   name: Prepare preview state
