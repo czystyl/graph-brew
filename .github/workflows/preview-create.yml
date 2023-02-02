@@ -39,33 +39,11 @@ jobs:
           issue-number: ${{ github.event.number }}
           body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
 
-      - run: |
-          body="testing123testing"
-          regex="testing (.*)tes"
-
-          [[ $body =~ $regex ]]
-          echo ${BASH_REMATCH[1]}
-
       - name: Get current preview url
         id: preview-url
         run: |
-          REGEX="__PREVIEW_URL: (.*) -->"          
+          REGEX="(__PREVIEW_URL: )(.*)( -->)"          
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
-
-          echo $COMMENT_BODY
-
-          [[ $COMMENT_BODY =~ $REGEX ]]
-
-          echo 2: "${BASH_REMATCH[1]}"
-
-
-          if [[ ${BASH_REMATCH[2]} == *"fly.dev"* ]]; then
-              echo "yes"
-          else
-              echo "no"
-          fi
-
-
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
               echo "preview_url=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
@@ -76,7 +54,7 @@ jobs:
       - name: Get current preview database
         id: preview-database
         run: |
-          REGEX="(<!-- __DATABASE_CONNECTION_STRING: )(.*)( -->)"
+          REGEX="__DATABASE_CONNECTION_STRING: (.*) -->"
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
@@ -93,7 +71,8 @@ jobs:
           body: |
             ## 🏗️ Building preview environment...
             <!-- __PREVIEW_DEPLOYMENT__ -->
-            <!-- __PREVIEW_URL: https://focus-brew-pg.fly.dev/ -->
+            <-- __PREVIEW_URL: https://focus-brew-pg.fly.dev/ -->
+            <-- __DATABASE_CONNECTION_STRING: asdasdasd -->
           edit-mode: replace
 
   check-database:
