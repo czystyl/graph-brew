@@ -45,8 +45,7 @@ jobs:
           REGEX="(__PREVIEW_URL: )(.*)( -->)"          
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
-
-          [[ $COMMENT_BODY =~ $REGEX ]]
+          [[ $(echo $COMMENT_BODY) =~ $REGEX ]]
 
           echo 2: "${BASH_REMATCH[2]}"
 

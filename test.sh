@@ -9,7 +9,7 @@ COMMENT_BODY="testing= <-- __PREVIEW_URL: https://focus-brew-pg.fly.dev/ -->"
 # https://stackoverflow.com/questions/229551/how-to-put-a-space-in-a-bash-variable
 
 
-[[ $COMMENT_BODY =~ $REGEX ]]
+[[ $(echo $COMMENT_BODY) =~ $REGEX ]]
 
 echo 2: "${BASH_REMATCH[2]}"
 
