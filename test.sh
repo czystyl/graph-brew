@@ -59,3 +59,7 @@ fly postgres create \
     --initial-cluster-size 1 \
     --volume-size 10 \
     --image-ref flyio/postgres:13
+
+
+
+    # flyctl apps destroy hello-brew-3 --yes
