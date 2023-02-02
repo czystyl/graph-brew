@@ -31,6 +31,7 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl apps list
       - run: echo e${{ secrets.FLY_API_TOKEN }}elo
+      - run: echo e${{ env.ELO }}|elo
 
   test-test:
     uses: ./.github/workflows/preview-database.yml
