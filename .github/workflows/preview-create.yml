@@ -31,7 +31,7 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: |
           PG_CREATE_COMMAND="
-            fly postgres create \
+            flyctl postgres create \
             --name test123 \
             --org product-brew \
             --region waw \
