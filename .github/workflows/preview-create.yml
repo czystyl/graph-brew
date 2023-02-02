@@ -98,7 +98,7 @@ jobs:
       - generate-preview-url
     outputs:
       connection-string: ${{ steps.connection-string.outputs.url }}
-    if: always() && needs.get-preview-state.outputs.pg-connection-string
+    if: always() && !needs.get-preview-state.outputs.pg-connection-string
     env:
       BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
     steps:
