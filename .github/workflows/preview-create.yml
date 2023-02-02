@@ -38,9 +38,7 @@ jobs:
       - name: Check if Database exists
         id: check-database
         run: |
-          APP_LIST=$(flyctl apps list)
-
-          if [[ $APP_LIST =~ duck-brew ]]; then
+          if [[ $(flyctl apps list) =~ duck-brew ]]; then
               echo "database-exists=true" >> $GITHUB_OUTPUT            
           fi
 
@@ -55,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: echo II${{ needs.check-database.database-exists }}II
+      - run: echo II${{ needs.check-database.outputs.database-exists }}II
       # - name: Create database
       #   id: create-database
       #   run: |
