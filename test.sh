@@ -1,4 +1,14 @@
-APP_NAME="hello-world-13"
+APP_NAME="focus-brew-pg"
+
+# flyctl check if app exists
+
+APP_LIST=$(flyctl apps list)
+
+if [[ $APP_LIST == *"$APP_NAME"* ]]; then
+    echo "App exists"
+    exit 1
+fi
+
 
 # DB_CONNECTION_STRING=""
 # DB_POSTGRES_IMAGE_VERSION=""
@@ -15,6 +25,16 @@ APP_NAME="hello-world-13"
 # "
 
 # PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
+
+# status=$?
+# echo $?
+# echo $PG_CREATE_OUTPUT
+
+# if [[ $PG_CREATE_OUTPUT == *"Name has already been taken"* ]]; then
+#     echo "OPS problem"
+#     exit 1
+# fi
+
 # REGEX="(Connection string: )(.*)( Save)"
 
 # if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
@@ -47,18 +67,18 @@ APP_NAME="hello-world-13"
 #     --auto-confirm
 
 
-ORG="postgres://postgres:ez2O3g4gqTlmy6d@hello-world-12.internal:5432"
+# ORG="postgres://postgres:ez2O3g4gqTlmy6d@hello-world-12.internal:5432"
 
-echo $ORG | sed "s/.internal:/.fly.dev:/g" | base64 
+# echo $ORG | sed "s/.internal:/.fly.dev:/g" | base64 
 
-fly postgres create \
-    --name $APP_NAME \
-    --org product-brew \
-    --region waw \
-    --vm-size shared-cpu-1x - 256 \
-    --initial-cluster-size 1 \
-    --volume-size 10 \
-    --image-ref flyio/postgres:13
+# fly postgres create \
+#     --name $APP_NAME \
+#     --org product-brew \
+#     --region waw \
+#     --vm-size shared-cpu-1x - 256 \
+#     --initial-cluster-size 1 \
+#     --volume-size 10 \
+#     --image-ref flyio/postgres:13
 
 
 
