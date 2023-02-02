@@ -7,6 +7,7 @@ env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  ELO: 321
 
 permissions:
   pull-requests: write
@@ -34,7 +35,7 @@ jobs:
   test-test:
     uses: ./.github/workflows/preview-database.yml
     with:
-      preview-url: "test123"
+      preview-url: ${{ env.ELO }}
 
   # prepare-preview-state:
   #   name: Prepare preview state
