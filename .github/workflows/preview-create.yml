@@ -96,7 +96,7 @@ jobs:
         run: |
           CONNECTION_STRING=$(echo ${{ steps.create-database.outputs.pg-connection-string }} | sed "s/.internal:/.fly.dev:/g")
 
-          echo CONNECTION_STRING | base64
+          echo $CONNECTION_STRING | base64
           echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
 
   # prepare-preview-state:
