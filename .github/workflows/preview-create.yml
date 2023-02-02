@@ -53,7 +53,8 @@ jobs:
       #     # fi
 
       # - run: flyctl ips allocate-v4 --app hello-brew-2
-      - run: sed "s/__APP_NAME_TEMPLATE__/$APP_NAME/g" fly_postgres_template.toml > fly.toml
+      - run: sed "s/__APP_NAME_TEMPLATE__/hello-brew-2/g" fly_postgres_template.toml > fly.toml
+      - run: cat fly.toml
       - run: |
           flyctl deploy \
             --app hello-brew-2 \
