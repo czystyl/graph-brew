@@ -2,24 +2,11 @@ APP_NAME="focus-brew-pg"
 
 # flyctl check if app exists
 
-REGEX="(__PREVIEW_URL: )(.*)( -->)"
-COMMENT_BODY="testing= <-- __PREVIEW_URL: https://focus-brew-pg.fly.dev/ -->"
+body="testing123testing"
+regex="testing(.*)tes"
 
-# space in bash regex 
-# https://stackoverflow.com/questions/229551/how-to-put-a-space-in-a-bash-variable
-
-
-[[ $(echo $COMMENT_BODY) =~ $REGEX ]]
-
-echo 2: "${BASH_REMATCH[2]}"
-
-
-if [[ ${BASH_REMATCH[2]} == *"fly.dev"* ]]; then
-    echo "yes"
-else
-    echo "no"
-fi
-
+[[ $body =~ $regex ]]
+echo ${BASH_REMATCH[1]}
 
 
 # DB_CONNECTION_STRING=""
