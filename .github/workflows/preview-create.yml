@@ -32,7 +32,7 @@ jobs:
       - run: |
           PG_CREATE_COMMAND="
             flyctl postgres create \
-            --name hello-brew-1 \
+            --name hello-brew-2 \
             --org product-brew \
             --region waw \
             --vm-size shared-cpu-1x - 256 \
