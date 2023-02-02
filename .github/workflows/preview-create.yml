@@ -29,146 +29,166 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl apps list
+      - run: |
+          PG_CREATE_COMMAND="
+            fly postgres create \
+            --name test123 \
+            --org product-brew \
+            --region waw \
+            --vm-size shared-cpu-1x - 256 \
+            --initial-cluster-size 1 \
+            --volume-size 1 \
+            --image-ref flyio/postgres:14
+          "
 
-  prepare-preview-state:
-    name: Prepare preview state
-    runs-on: ubuntu-latest
-    outputs:
-      url: ${{ steps.vercel-preview-url.outputs.vercel_preview_url }}
-    steps:
-      - name: Find preview deployment comment
-        uses: peter-evans/find-comment@v2
-        if: success() && github.event.number
-        id: preview-comment
-        with:
-          issue-number: ${{ github.event.number }}
-          body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
+          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
+          REGEX="(Connection string: )(.*)( Save)"
 
-      - name: Get current preview environment url
-        id: vercel-preview-url
-        run: |
-          REGEX="(<!-- __VERCEL_PREVIEW_URL: )(.*)( -->)"
-          COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
-
-          if [[ $COMMENT_BODY =~ $REGEX ]]; then
-              echo "vercel_preview_url=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+          if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
+            echo ${BASH_REMATCH[2]}
           else
-              echo "No previous Preview Environment. SKip!"
+            echo "OPS problem"
+            exit 1
           fi
 
-      - name: Create or update preview environment comment
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## 🏗️ Building preview environment...
-            <!-- __VERCEL_DEPLOYMENT__ -->
-          edit-mode: replace
+  # prepare-preview-state:
+  #   name: Prepare preview state
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     url: ${{ steps.vercel-preview-url.outputs.vercel_preview_url }}
+  #   steps:
+  #     - name: Find preview deployment comment
+  #       uses: peter-evans/find-comment@v2
+  #       if: success() && github.event.number
+  #       id: preview-comment
+  #       with:
+  #         issue-number: ${{ github.event.number }}
+  #         body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
 
-  deploy-preview:
-    name: Deploy preview environment
-    runs-on: ubuntu-latest
-    outputs:
-      url: ${{ steps.deploy.outputs.url }}
-    steps:
-      - uses: actions/checkout@v3
+  #     - name: Get current preview environment url
+  #       id: vercel-preview-url
+  #       run: |
+  #         REGEX="(<!-- __VERCEL_PREVIEW_URL: )(.*)( -->)"
+  #         COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 7
-          run_install: false
+  #         if [[ $COMMENT_BODY =~ $REGEX ]]; then
+  #             echo "vercel_preview_url=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+  #         else
+  #             echo "No previous Preview Environment. SKip!"
+  #         fi
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+  #     - name: Create or update preview environment comment
+  #       uses: peter-evans/create-or-update-comment@v2
+  #       with:
+  #         comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+  #         issue-number: ${{ github.event.pull_request.number }}
+  #         body: |
+  #           ## 🏗️ Building preview environment...
+  #           <!-- __VERCEL_DEPLOYMENT__ -->
+  #         edit-mode: replace
 
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+  # deploy-preview:
+  #   name: Deploy preview environment
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     url: ${{ steps.deploy.outputs.url }}
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: Install Vercel CLI
-        run: pnpm add vercel@latest --global
+  #     - uses: pnpm/action-setup@v2
+  #       name: Install pnpm
+  #       id: pnpm-install
+  #       with:
+  #         version: 7
+  #         run_install: false
 
-      - name: Pull Vercel Preview  Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+  #     - name: Get pnpm store directory
+  #       id: pnpm-cache
+  #       shell: bash
+  #       run: |
+  #         echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Replace Environment Variables
-        run: |
-          # WIP!
-          sed -i '/^NEXT_PUBLIC_ALL_ENV=/s/=.*/="33213123!"/' .vercel/.env.preview.local
+  #     - uses: actions/cache@v3
+  #       name: Setup pnpm cache
+  #       with:
+  #         path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-pnpm-store-
 
-      - name: Build Project Artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+  #     - name: Install Vercel CLI
+  #       run: pnpm add vercel@latest --global
 
-      - name: Deploy Project Artifacts to Vercel
-        id: deploy
-        run: |
-          DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=${DOMAIN}" >> $GITHUB_OUTPUT
+  #     - name: Pull Vercel Preview  Environment Information
+  #       run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-  alias-preview:
-    name: Add environment URL alias
-    runs-on: ubuntu-latest
-    needs:
-      - deploy-preview
-      - generate-preview-url
-    steps:
-      - name: Alias current deployment
-        run: |
-          vercel alias \
-            ${{ needs.deploy-preview.outputs.url }} \
-            ${{ needs.generate-preview-url.outputs.url }} \
-            --token=${{ secrets.VERCEL_TOKEN }}
+  #     - name: Replace Environment Variables
+  #       run: |
+  #         # WIP!
+  #         sed -i '/^NEXT_PUBLIC_ALL_ENV=/s/=.*/="33213123!"/' .vercel/.env.preview.local
 
-  remove-old-preview:
-    name: Remove old environment
-    runs-on: ubuntu-latest
-    needs:
-      - alias-preview
-      - prepare-preview-state
-    steps:
-      - name: Remove previous preview environment
-        run: |
-          VERCEL_PREVIEW_URL="${{ needs.prepare-preview-state.outputs.url }}"
+  #     - name: Build Project Artifacts
+  #       run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
-          if [ $VERCEL_PREVIEW_URL ]; then
-              vercel remove $VERCEL_PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
-          else
-              echo "No previous Preview Environment"
-          fi
+  #     - name: Deploy Project Artifacts to Vercel
+  #       id: deploy
+  #       run: |
+  #         DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+  #         echo "url=${DOMAIN}" >> $GITHUB_OUTPUT
 
-  update-deployment-comment:
-    name: Update preview state
-    runs-on: ubuntu-latest
-    needs:
-      - alias-preview
-      - generate-preview-url
-    steps:
-      - name: Find preview environment comment to update
-        uses: peter-evans/find-comment@v2
-        if: success() && github.event.number
-        id: preview-comment
-        with:
-          issue-number: ${{ github.event.number }}
-          body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
+  # alias-preview:
+  #   name: Add environment URL alias
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - deploy-preview
+  #     - generate-preview-url
+  #   steps:
+  #     - name: Alias current deployment
+  #       run: |
+  #         vercel alias \
+  #           ${{ needs.deploy-preview.outputs.url }} \
+  #           ${{ needs.generate-preview-url.outputs.url }} \
+  #           --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Create or update preview link comment
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.url }})
-            <!-- __VERCEL_DEPLOYMENT__ -->
-            <!-- __VERCEL_PREVIEW_URL: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
+  # remove-old-preview:
+  #   name: Remove old environment
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - alias-preview
+  #     - prepare-preview-state
+  #   steps:
+  #     - name: Remove previous preview environment
+  #       run: |
+  #         VERCEL_PREVIEW_URL="${{ needs.prepare-preview-state.outputs.url }}"
+
+  #         if [ $VERCEL_PREVIEW_URL ]; then
+  #             vercel remove $VERCEL_PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
+  #         else
+  #             echo "No previous Preview Environment"
+  #         fi
+
+  # update-deployment-comment:
+  #   name: Update preview state
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - alias-preview
+  #     - generate-preview-url
+  #   steps:
+  #     - name: Find preview environment comment to update
+  #       uses: peter-evans/find-comment@v2
+  #       if: success() && github.event.number
+  #       id: preview-comment
+  #       with:
+  #         issue-number: ${{ github.event.number }}
+  #         body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
+
+  #     - name: Create or update preview link comment
+  #       uses: peter-evans/create-or-update-comment@v2
+  #       with:
+  #         comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+  #         issue-number: ${{ github.event.pull_request.number }}
+  #         edit-mode: replace
+  #         body: |
+  #           ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.url }})
+  #           <!-- __VERCEL_DEPLOYMENT__ -->
+  #           <!-- __VERCEL_PREVIEW_URL: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
