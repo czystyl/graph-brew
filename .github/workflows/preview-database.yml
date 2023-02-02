@@ -20,36 +20,36 @@ jobs:
       url: ${{ steps.generate-preview-url.outputs.url }}
     steps:
       - uses: actions/checkout@v3
-      - run: echo ${{ secrets.FLY_API_TOKEN }}
+      - run: echo e${{ secrets.FLY_API_TOKEN }}elo
       - uses: superfly/flyctl-actions/setup-flyctl@master
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        # env:
+        #   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - run: flyctl apps list
 
-      - name: Generate Branch Preview URL
-        id: generate-preview-url
-        run: |
-          PG_CREATE_COMMAND="
-              fly postgres create \
-              --name ${{ inputs.preview-url }} \
-              --org product-brew \
-              --region waw \
-              --vm-size shared-cpu-1x - 256 \
-              --initial-cluster-size 1 \
-              --volume-size 10 \
-              --image-ref flyio/postgres:14
-          "
+      # - name: Generate Branch Preview URL
+      #   id: generate-preview-url
+      #   run: |
+      #     PG_CREATE_COMMAND="
+      #         fly postgres create \
+      #         --name ${{ inputs.preview-url }} \
+      #         --org product-brew \
+      #         --region waw \
+      #         --vm-size shared-cpu-1x - 256 \
+      #         --initial-cluster-size 1 \
+      #         --volume-size 10 \
+      #         --image-ref flyio/postgres:14
+      #     "
 
-          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
+      #     PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
 
-          REGEX="(Connection string: )(.*)( Save)"
+      #     REGEX="(Connection string: )(.*)( Save)"
 
-          if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
-              DB_CONNECTION_STRING=${BASH_REMATCH[2]}
-          else
-              echo "OPS problem"
-              exit 1
-          fi
+      #     if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
+      #         DB_CONNECTION_STRING=${BASH_REMATCH[2]}
+      #     else
+      #         echo "OPS problem"
+      #         exit 1
+      #     fi
 
-          echo $DB_CONNECTION_STRING
+      #     echo $DB_CONNECTION_STRING
