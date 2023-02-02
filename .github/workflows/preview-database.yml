@@ -1,0 +1,54 @@
+name: Create Preview Database
+
+on:
+  workflow_call:
+    inputs:
+      preview-url:
+        required: true
+        type: string
+        default: "elo-123"
+
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  generate-preview-url:
+    name: Generate preview URL
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.generate-preview-url.outputs.url }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Generate Branch Preview URL
+        id: generate-preview-url
+        run: |
+          PG_CREATE_COMMAND="
+              fly postgres create \
+              --name ${{ inputs.preview-url }} \
+              --org product-brew \
+              --region waw \
+              --vm-size shared-cpu-1x - 256 \
+              --initial-cluster-size 1 \
+              --volume-size 10 \
+              --image-ref flyio/postgres:14
+          "
+
+          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
+
+          REGEX="(Connection string: )(.*)( Save)"
+
+          if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
+              DB_CONNECTION_STRING=${BASH_REMATCH[2]}
+          else
+              echo "OPS problem"
+              exit 1
+          fi
+
+          echo $DB_CONNECTION_STRING
