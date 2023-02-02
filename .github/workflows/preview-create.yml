@@ -31,7 +31,7 @@ jobs:
       - run: flyctl apps list
 
   test-test:
-    uses: octo-org/example-repo/.github/workflows/reusable-workflow.yml@main
+    uses: ./.github/workflows/preview-database.yml
     with:
       preview-url: "test123"
 
