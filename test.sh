@@ -4,7 +4,7 @@ APP_NAME="focus-brew-pg"
 
 APP_LIST=$(flyctl apps list)
 
-if [[ $APP_LIST == *"$APP_NAME"* ]]; then
+if [[ $APP_LIST =~ duck-brew ]]; then
     echo "App exists"
     exit 1
 fi
