@@ -29,26 +29,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      # - run: |
+      #     # PG_CREATE_COMMAND="
+      #     #   flyctl postgres create \
+      #     #   --name hello-brew-2 \
+      #     #   --org product-brew \
+      #     #   --region waw \
+      #     #   --vm-size shared-cpu-1x - 256 \
+      #     #   --initial-cluster-size 1 \
+      #     #   --volume-size 1 \
+      #     #   --image-ref flyio/postgres:14
+      #     # "
+
+      #     # PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
+      #     # REGEX="(Connection string: )(.*)( Save)"
+
+      #     # if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
+      #     #   echo ${BASH_REMATCH[2]} | base64
+      #     # else
+      #     #   echo "OPS problem"
+      #     #   exit 1
+      #     # fi
+
+      - run: fly ips allocate-v4 --app hello-brew-2
       - run: |
-          PG_CREATE_COMMAND="
-            flyctl postgres create \
-            --name hello-brew-2 \
-            --org product-brew \
-            --region waw \
-            --vm-size shared-cpu-1x - 256 \
-            --initial-cluster-size 1 \
-            --volume-size 1 \
-            --image-ref flyio/postgres:14
-          "
+          IMAGE_OUTPUT=$(fly image show --app hello-brew-2)
+          REGEX="(flyio/postgres )(.*)( v0)"
 
-          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
-          REGEX="(Connection string: )(.*)( Save)"
-
-          if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
-            echo ${BASH_REMATCH[2]} | base64 
+          if [[ $(echo $IMAGE_OUTPUT) =~ $REGEX ]]; then
+              DB_POSTGRES_IMAGE_VERSION=${BASH_REMATCH[2]}
+              echo "postgres-version=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
           else
-            echo "OPS problem"
-            exit 1
+              echo "OPS problem"
+              exit 1
           fi
 
   # prepare-preview-state:
