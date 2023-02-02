@@ -2,8 +2,8 @@ APP_NAME="focus-brew-pg"
 
 # flyctl check if app exists
 
-body="testing123testing"
-regex="testing(.*)tes"
+body="testing 123testing"
+regex="testing (.*)tes"
 
 [[ $body =~ $regex ]]
 echo ${BASH_REMATCH[1]}

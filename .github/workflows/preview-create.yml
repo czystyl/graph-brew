@@ -49,12 +49,14 @@ jobs:
       - name: Get current preview url
         id: preview-url
         run: |
-          REGEX="(__PREVIEW_URL: )(.*)( -->)"          
+          REGEX="__PREVIEW_URL: (.*) -->"          
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
-          [[ $(echo $COMMENT_BODY) =~ $REGEX ]]
+          echo $COMMENT_BODY
 
-          echo 2: "${BASH_REMATCH[2]}"
+          [[ $COMMENT_BODY =~ $REGEX ]]
+
+          echo 2: "${BASH_REMATCH[1]}"
 
 
           if [[ ${BASH_REMATCH[2]} == *"fly.dev"* ]]; then
