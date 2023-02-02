@@ -38,7 +38,10 @@ jobs:
       - name: Check if Database exists
         id: check-database
         run: |
-          if [[ $(flyctl apps list) =~ ${{ needs.generate-preview-url.outputs.preview-hash }} ]]; then
+          FLY_APPS=$(flyctl apps list)
+          PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
+
+          if [[ FLY_APPS =~ PREVIEW_HASH ]]; then
               echo "database-exists=1" >> $GITHUB_OUTPUT            
           fi
 
@@ -47,6 +50,8 @@ jobs:
     needs:
       - check-database
       - generate-preview-url
+    outputs:
+      connection-string: ${{ steps.connection-string.outputs.url }}
     if: always() && needs.check-database.outputs.database-exists != 1
     env:
       BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
@@ -54,40 +59,45 @@ jobs:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: echo II${{ needs.check-database.outputs.database-exists }}II
-      # - name: Create database
-      #   id: create-database
-      #   run: |
-      #     PG_CREATE_COMMAND="
-      #         flyctl postgres create \
-      #         --name $BRANCH_NAME \
-      #         --org product-brew \
-      #         --region waw \
-      #         --vm-size shared-cpu-1x - 256 \
-      #         --initial-cluster-size 1 \
-      #         --volume-size 1 \
-      #         --image-ref flyio/postgres:14
-      #       "
+      - name: Create database
+        id: create-database
+        run: |
+          PG_CREATE_COMMAND="
+              flyctl postgres create \
+              --name $BRANCH_NAME \
+              --org product-brew \
+              --region waw \
+              --vm-size shared-cpu-1x - 256 \
+              --initial-cluster-size 1 \
+              --volume-size 1 \
+              --image-ref flyio/postgres:14
+            "
 
-      #     PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
-      #     REGEX="(Connection string: )(.*)( Save)"
+          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
+          REGEX="(Connection string: )(.*)( Save)"
 
-      #     if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
-      #       echo "pg-connection-string=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
-      #     else
-      #       echo "OPS problem"
-      #       exit 1
-      #     fi
+          if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
+            echo "pg-connection-string=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+          else
+            echo "OPS problem"
+            exit 1
+          fi
 
-      # - run: flyctl ips allocate-v4 --app $BRANCH_NAME
-      # - run: sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
-      # - run: cat fly.toml
-      # - run: |
-      #     flyctl deploy \
-      #       --app $BRANCH_NAME \
-      #       --image flyio/postgres:14 \
-      #       --auto-confirm
+      - run: flyctl ips allocate-v4 --app $BRANCH_NAME
+      - run: sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
+      - run: cat fly.toml
+      - run: |
+          flyctl deploy \
+            --app $BRANCH_NAME \
+            --image flyio/postgres:14 \
+            --auto-confirm
+      - name: Format Connection string
+        id: connection-string
+        run: |
+          CONNECTION_STRING=$(echo ${{ steps.create-database.outputs.pg-connection-string }} | sed "s/.internal:/.fly.dev:/g")
 
-      # - run: echo ${{ steps.create-database.outputs.pg-connection-string }} | sed "s/.internal:/.fly.dev:/g" | base64
+          echo CONNECTION_STRING | base64
+          echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
 
   # prepare-preview-state:
   #   name: Prepare preview state
