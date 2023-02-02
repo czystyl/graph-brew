@@ -99,12 +99,15 @@ jobs:
           echo $CONNECTION_STRING | base64
           echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
 
-  # prepare-preview-state:
-  #   name: Prepare preview state
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     url: ${{ steps.vercel-preview-url.outputs.vercel_preview_url }}
-  #   steps:
+  prepare-preview-state:
+    name: Prepare preview state
+    runs-on: ubuntu-latest
+    needs:
+      - create-database
+    outputs:
+      url: ${{ steps.vercel-preview-url.outputs.vercel_preview_url }}
+    steps:
+      - run: echo 00${{ needs.create-database.outputs.connection-string }}00
   #     - name: Find preview deployment comment
   #       uses: peter-evans/find-comment@v2
   #       if: success() && github.event.number
