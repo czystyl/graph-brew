@@ -1,4 +1,4 @@
-# APP_NAME="hello-world-12"
+APP_NAME="hello-world-13"
 
 # DB_CONNECTION_STRING=""
 # DB_POSTGRES_IMAGE_VERSION=""
@@ -50,3 +50,12 @@
 ORG="postgres://postgres:ez2O3g4gqTlmy6d@hello-world-12.internal:5432"
 
 echo $ORG | sed "s/.internal:/.fly.dev:/g" | base64 
+
+fly postgres create \
+    --name $APP_NAME \
+    --org product-brew \
+    --region waw \
+    --vm-size shared-cpu-1x - 256 \
+    --initial-cluster-size 1 \
+    --volume-size 10 \
+    --image-ref flyio/postgres:13
