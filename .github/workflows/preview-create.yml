@@ -46,7 +46,7 @@ jobs:
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
-              echo "preview_url=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+              echo "preview_url=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           else
               echo "No Preview Environment!"
           fi
@@ -58,7 +58,7 @@ jobs:
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
-              echo "connection-string=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+              echo "connection-string=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           else
               echo "No connection string"
           fi
