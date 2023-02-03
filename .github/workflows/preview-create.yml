@@ -257,6 +257,19 @@ jobs:
           issue-number: ${{ github.event.number }}
           body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
 
+      - name: data
+        id: data
+        run: |
+          connection_string="sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899"
+
+          echo $connection_string
+          echo $connection_string | base64
+          echo $connection_string | base64 | base64 -d
+
+          CS=$($connection_string | base64)
+
+          echo "url=$CS" >> $GITHUB_OUTPUT
+
       - name: Create or update preview link comment
         uses: peter-evans/create-or-update-comment@v2
         with:
@@ -264,10 +277,8 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            1: ${{ sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899 | base64  }} :2
+            ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
 
-## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
-
-# <!-- __PREVIEW_DEPLOYMENT__ -->
-# <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
-# <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
+            <!-- __PREVIEW_DEPLOYMENT__ -->
+            <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
+            <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
