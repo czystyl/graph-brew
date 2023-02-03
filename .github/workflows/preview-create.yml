@@ -266,9 +266,13 @@ jobs:
           echo $connection_string | base64
           echo $connection_string | base64 | base64 -d
 
-          CS=$($connection_string | base64)
+          CS=$(echo $connection_string | base64)
 
-          echo "cs=$CS" >> $GITHUB_OUTPUT
+          echo $CS
+
+          echo "cs="$CS"" >> $GITHUB_OUTPUT
+
+      - run: echo ${{ steps.data.outputs.cs }}
 
       - name: Create or update preview link comment
         uses: peter-evans/create-or-update-comment@v2
