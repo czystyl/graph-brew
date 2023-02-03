@@ -127,7 +127,7 @@ jobs:
           REGEX="Connection string: (.*) Save"
 
           if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
-            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}            
+            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}
           else
             echo "OPS problem"
             exit 1
@@ -142,8 +142,7 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-
-          echo $INTERNAL_CONNECTION_STRING
+          echo $INTERNAL_CONNECTION_STRING | base64
 
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64) 
 
