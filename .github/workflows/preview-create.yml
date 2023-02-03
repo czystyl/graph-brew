@@ -141,11 +141,11 @@ jobs:
 
       - name: format connection-string
         run: |
-          if [[ ${{ needs.get-preview-state.outputs.pg-connection-string }} ]]; then
+          if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
             echo esa
           fi
 
-          if [[ ${{ steps.create-database.outputs.url }} ]]; then
+          if [[ "${{ steps.create-database.outputs.url }}"" ]]; then
             echo elo            
           fi
 
