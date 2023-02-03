@@ -49,7 +49,7 @@ jobs:
           REGEX="(<!-- __VERCEL_PREVIEW_URL: )(.*)( -->)"
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
-          if [[ $COMMENT_BODY =~ $REGEX ]]; then
+          if [[ "$COMMENT_BODY" =~ $REGEX ]]; then
               echo "VERCEL_PREVIEW_URL=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
           else
               echo "No previous Preview Environment. SKip!"
