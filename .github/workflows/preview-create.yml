@@ -268,7 +268,7 @@ jobs:
         id: preview-comment
         with:
           issue-number: ${{ github.event.number }}
-          body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
+          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
 
       - name: Create or update preview link comment
         uses: peter-evans/create-or-update-comment@v2
