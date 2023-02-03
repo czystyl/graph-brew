@@ -149,7 +149,7 @@ jobs:
 
           echo $CONNECTION_STRING
 
-          echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
+          echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
       - name: format connection-string
         run: |
