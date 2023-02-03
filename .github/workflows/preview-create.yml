@@ -25,11 +25,6 @@ jobs:
           BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-30)
           echo "preview-sha=$BRANCH_SHA" >> $GITHUB_OUTPUT
 
-      - run: |
-          echo sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899
-          echo sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899 | base64
-          echo sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899 | base64 | base64 -d
-
   # get-preview-state:
   #   name: Get preview state
   #   runs-on: ubuntu-latest
@@ -245,32 +240,34 @@ jobs:
   #             echo "No previous Preview Environment"
   #         fi
 
-  # update-deployment-comment:
-  #   name: Update preview state
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - alias-preview
-  #     - generate-preview-url
-  #     - preview-database
-  #     - deploy-preview
-  #   steps:
-  #     - name: Find preview environment comment to update
-  #       uses: peter-evans/find-comment@v2
-  #       if: success() && github.event.number
-  #       id: preview-comment
-  #       with:
-  #         issue-number: ${{ github.event.number }}
-  #         body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+  update-deployment-comment:
+    name: Update preview state
+    runs-on: ubuntu-latest
+    # needs:
+    #   - alias-preview
+    #   - generate-preview-url
+    #   - preview-database
+    #   - deploy-preview
+    steps:
+      - name: Find preview environment comment to update
+        uses: peter-evans/find-comment@v2
+        if: success() && github.event.number
+        id: preview-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
 
-  #     - name: Create or update preview link comment
-  #       uses: peter-evans/create-or-update-comment@v2
-  #       with:
-  #         comment-id: ${{ steps.preview-comment.outputs.comment-id }}
-  #         issue-number: ${{ github.event.pull_request.number }}
-  #         edit-mode: replace
-  #         body: |
-  #           ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
+      - name: Create or update preview link comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            1: ${{ echo sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899 | base64  }} :2
 
-  #           <!-- __PREVIEW_DEPLOYMENT__ -->
-  #           <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
-  #           <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
+## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
+
+# <!-- __PREVIEW_DEPLOYMENT__ -->
+# <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
+# <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
