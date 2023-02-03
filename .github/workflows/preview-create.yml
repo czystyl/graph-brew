@@ -136,10 +136,11 @@ jobs:
           CONNECTION_STRING=$(echo ${{ steps.create-database.outputs.pg-connection-string }} | sed "s/.internal:/.fly.dev:/g")
 
           echo $CONNECTION_STRING | base64
-          echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
+          echo "url=321${CONNECTION_STRING}123" >> $GITHUB_OUTPUT
 
       - name: format connection-string
         run: |
+          echo ${{ steps.create-database.outputs.url }}
           echo ${{ needs.get-preview-state.outputs.preview-url }}
           echo ${{ needs.get-preview-state.outputs.pg-connection-string }}
 
