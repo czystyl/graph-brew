@@ -160,7 +160,7 @@ jobs:
       - name: format connection-string
         run: |
           echo "${{steps.create-database.outputs.url}}"
-          echo "${{steps.create-database.outputs.url}}""
+          echo "${{steps.create-database.outputs.url}}"
 
           if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
             echo esa
