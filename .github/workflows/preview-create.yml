@@ -82,6 +82,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
+
       - name: Check if Database exists
         id: check-database
         run: |
@@ -99,9 +100,13 @@ jobs:
           flyctl apps destroy ${{ needs.generate-preview-url.outputs.preview-hash }} --yes
           echo "deleted=1" >> $GITHUB_OUTPUT
 
+      - run: echo ${{needs.get-preview-state.outputs.pg-connection-string}}
+
+      - run: echo ${{steps.check-database.outputs.database-exists}}
+
       - name: Create database
         id: create-database
-        if: always() && !needs.get-preview-state.outputs.pg-connection-string && steps.check-database.outputs.database-exists != 1
+        if: always() && !needs.get-preview-state.outputs.pg-connection-string && steps.check-database.outputs.database-exists == 1
         run: |
           PG_CREATE_COMMAND="
               flyctl postgres create \
