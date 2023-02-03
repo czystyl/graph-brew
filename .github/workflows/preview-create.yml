@@ -83,8 +83,6 @@ jobs:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - run: echo ${{ needs.get-preview-state.outputs.pg-connection-string }}
-
       - name: Check if Database exists
         id: check-database
         run: |
@@ -190,9 +188,9 @@ jobs:
 
       - name: Replace Environment Variables
         run: |
-          echo ${{ needs.preview-database.outputs.connection-string }}
 
-          sed -i "/^NEXT_PUBLIC_ALL_ENV=/s/=.*/=${{needs.preview-database.outputs.connection-string}}/" .vercel/.env.preview.local
+          DB_URI=$(echo ${{ needs.preview-database.outputs.connection-string }} | base64 -d)
+          sed -i "/^NEXT_PUBLIC_ALL_ENV=/s/=.*/=$DB_URI/" .vercel/.env.preview.local
 
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
