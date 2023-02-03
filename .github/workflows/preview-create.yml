@@ -152,8 +152,8 @@ jobs:
 
       - name: format connection-string
         run: |
-
-          # echo ${{  }}
+          echo A${{steps.create-database.outputs.url}}A
+          echo L${{steps.create-database.outputs.url}}L
 
           if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
             echo esa
