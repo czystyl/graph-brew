@@ -155,7 +155,7 @@ jobs:
         name: Upload Artifact
         with:
           name: SecretsVariables
-          path: "secrets.txt"
+          path: test.txt
 
       - name: format connection-string
         run: |
