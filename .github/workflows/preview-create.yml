@@ -58,8 +58,6 @@ jobs:
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
               echo "connection-string=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-          else 
-              echo "connection-string=3213131" >> $GITHUB_OUTPUT
           fi
 
       - name: Create or update preview environment comment
@@ -141,20 +139,14 @@ jobs:
 
       - name: format connection-string
         run: |
-
-
           if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
             echo esa
+          elseif [[ "${{ steps.create-database.outputs.url }}" ]]; then
+            echo elo        
+          else
+            echo ERROOOORRRRR
+            exit 1
           fi
-
-          if [[ "${{ steps.create-database.outputs.url }}" ]]; then
-            echo elo            
-          fi
-
-          echo ${{ steps.create-database.outputs.url }}
-          echo ${{ needs.get-preview-state.outputs.preview-url }}
-          echo ${{ needs.get-preview-state.outputs.pg-connection-string }}
-
       # - name: Alocate IP
       #   if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
       #   run: flyctl ips allocate-v4 --app $BRANCH_NAME
