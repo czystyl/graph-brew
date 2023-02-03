@@ -1,11 +1,5 @@
+INTERNAL_CONNECTION_STRING=3213123123
+CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64) 
 
 
-if [[ "" ]]; then
-    echo esa
-elif [[ "" ]]; then
-    echo elo        
-else
-    echo ERROOOORRRRR
-    exit 1
-fi
-
+echo $CONNECTION_STRING

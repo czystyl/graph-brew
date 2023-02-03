@@ -145,14 +145,16 @@ jobs:
 
           echo $INTERNAL_CONNECTION_STRING
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g") | base64
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64) 
+
+          echo $CONNECTION_STRING
 
           echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
 
       - name: format connection-string
         run: |
-          echo A${{steps.create-database.outputs.url}}A
-          echo L${{steps.create-database.outputs.url}}L
+          echo "${{steps.create-database.outputs.url}}"
+          echo "${{steps.create-database.outputs.url}}""
 
           if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
             echo esa
