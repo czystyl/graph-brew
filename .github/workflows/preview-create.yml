@@ -57,7 +57,7 @@ jobs:
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ "$COMMENT_BODY" =~ $REGEX ]]; then
-              echo "connection-string=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+              echo "connection-string="${BASH_REMATCH[1]}"" >> $GITHUB_OUTPUT
           fi
 
       - name: Create or update preview environment comment
