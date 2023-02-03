@@ -57,7 +57,9 @@ jobs:
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
-              echo "connection-string=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT         
+              echo "connection-string=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          else 
+              echo "connection-string=3213131" >> $GITHUB_OUTPUT
           fi
 
       - name: Create or update preview environment comment
@@ -133,13 +135,13 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g") | base64
 
-          echo $CONNECTION_STRING | base64
-          echo "url=321${CONNECTION_STRING}123" >> $GITHUB_OUTPUT
+          echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
 
       - name: format connection-string
         run: |
+          if [[  ]]
           echo ${{ steps.create-database.outputs.url }}
           echo ${{ needs.get-preview-state.outputs.preview-url }}
           echo ${{ needs.get-preview-state.outputs.pg-connection-string }}
