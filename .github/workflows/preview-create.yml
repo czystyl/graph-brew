@@ -88,7 +88,9 @@ jobs:
           FLY_APPS=$(flyctl apps list)
           PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
 
-          if [[ FLY_APPS =~ PREVIEW_HASH ]]; then
+
+
+          if [[ $FLY_APPS =~ PREVIEW_HASH ]]; then
               echo "exists"
               echo "database-exists=1" >> $GITHUB_OUTPUT
           fi
