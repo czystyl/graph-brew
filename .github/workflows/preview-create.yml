@@ -273,11 +273,8 @@ jobs:
 
           CS="${CS//'%'/'%25'}"
           echo $CS
-          CS="${CS//$'\n'/'%0A'}"
-          echo $CS
-          CS="${CS//$'\r'/'%0D'}"
+          CS="${CS//$'\n'/''}"
 
-          echo $CS
 
           echo "cs="$CS"" >> $GITHUB_OUTPUT
 
