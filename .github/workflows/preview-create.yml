@@ -190,9 +190,7 @@ jobs:
 
       - name: Replace Environment Variables
         run: |
-
-          DB_URI=$(echo ${{ needs.preview-database.outputs.connection-string }} | base64 -d)
-          sed -i "/^NEXT_PUBLIC_ALL_ENV=/s/=.*/=$DB_URI/" .vercel/.env.preview.local
+          sed -i "/^NEXT_PUBLIC_ALL_ENV=/s/=.*/=${{ needs.preview-database.outputs.connection-string }}/" .vercel/.env.preview.local
 
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
