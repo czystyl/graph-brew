@@ -101,7 +101,7 @@ jobs:
 
       - name: Create database
         id: create-database
-        if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
+        if: needs.get-preview-state.outputs.url && !steps.check-database.outputs.database-exists
         run: |
           PG_CREATE_COMMAND="
               flyctl postgres create \
@@ -124,30 +124,44 @@ jobs:
             exit 1
           fi
 
-      - name: Alocate IP
-        if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
-        run: flyctl ips allocate-v4 --app $BRANCH_NAME
+          flyctl ips allocate-v4 --app $BRANCH_NAME
 
-      - name: Generate Fly config
-        if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
-        run: sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
+          sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
 
-      - name: Deploy updated database
-        if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
-        run: |
           flyctl deploy \
             --app $BRANCH_NAME \
             --image flyio/postgres:14 \
             --auto-confirm
 
-      - name: Format Connection string
-        if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
-        id: connection-string
-        run: |
           CONNECTION_STRING=$(echo ${{ steps.create-database.outputs.pg-connection-string }} | sed "s/.internal:/.fly.dev:/g")
 
           echo $CONNECTION_STRING | base64
           echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
+
+      # - name: Alocate IP
+      #   if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
+      #   run: flyctl ips allocate-v4 --app $BRANCH_NAME
+
+      # - name: Generate Fly config
+      #   if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
+      #   run: sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
+
+      # - name: Deploy updated database
+      #   if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
+      #   run: |
+      #     flyctl deploy \
+      #       --app $BRANCH_NAME \
+      #       --image flyio/postgres:14 \
+      #       --auto-confirm
+
+      # - name: Format Connection string
+      #   if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
+      #   id: connection-string
+      #   run: |
+      #     CONNECTION_STRING=$(echo ${{ steps.create-database.outputs.pg-connection-string }} | sed "s/.internal:/.fly.dev:/g")
+
+      #     echo $CONNECTION_STRING | base64
+      #     echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
 
   # deploy-preview:
   #   name: Deploy preview environment
