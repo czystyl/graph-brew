@@ -143,7 +143,7 @@ jobs:
         id: encoded-connection-string
         run: |
           if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
-            echo "uri=needs.get-preview-state.outputs.pg-connection-string" >> $GITHUB_OUTPUT
+            echo "uri=${{ needs.get-preview-state.outputs.pg-connection-string }}" >> $GITHUB_OUTPUT
           elif [[ "${{ steps.create-database.outputs.url }}" ]]; then
             echo "uri=${{ steps.create-database.outputs.url }}" >> $GITHUB_OUTPUT
           else
@@ -259,7 +259,7 @@ jobs:
           edit-mode: replace
           body: |
             ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
-            123
+
             <!-- __PREVIEW_DEPLOYMENT__ -->
-            <!-- __PREVIEW_URL:: ${{ needs.deploy-preview.outputs.url }} -->
+            <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
             <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
