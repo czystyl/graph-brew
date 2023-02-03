@@ -142,7 +142,9 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          echo $INTERNAL_CONNECTION_STRING 
+          echo $INTERNAL_CONNECTION_STRING > test.txt
+
+          cat test.txt
 
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | xargs) 
 
