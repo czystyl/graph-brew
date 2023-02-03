@@ -57,9 +57,7 @@ jobs:
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
-              echo "connection-string=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-          else  
-            echo "connection-string=grazyna" >> $GITHUB_OUTPUT
+              echo "connection-string=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT         
           fi
 
       - name: Create or update preview environment comment
@@ -89,6 +87,8 @@ jobs:
           PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
 
           if [[ FLY_APPS =~ PREVIEW_HASH ]]; then
+              echo "database-exists=1" >> $GITHUB_OUTPUT
+           else  
               echo "database-exists=1" >> $GITHUB_OUTPUT
           fi
 
