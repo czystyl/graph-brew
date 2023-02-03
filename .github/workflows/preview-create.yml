@@ -98,7 +98,7 @@ jobs:
         run: echo "EXISTS[${{ needs.get-preview-state.outputs.pg-connection-string }}]EXISTS"
 
       - name: TEST2
-        if: ${{ !needs.get-preview-state.outputs.pg-connection-string }}
+        if: !needs.get-preview-state.outputs.pg-connection-string
         run: echo "EXISTS[${{ needs.get-preview-state.outputs.pg-connection-string }}]EXISTS"
 
       # - run: echo "[${{ steps.check-database.outputs.database-exists }}]"
