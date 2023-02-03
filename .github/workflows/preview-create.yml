@@ -260,7 +260,7 @@ jobs:
       - name: data
         id: data
         run: |
-          connection_string="sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899"
+          connection_string="postgres://postgres:UzDlKEJGrmjHcGz@4719c80b6fe911b091a7c05124b64eeece.fly.dev:5432"
 
           echo $connection_string
           echo $connection_string | base64
