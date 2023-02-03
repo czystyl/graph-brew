@@ -268,7 +268,7 @@ jobs:
 
           CS=$($connection_string | base64)
 
-          echo "url=$CS" >> $GITHUB_OUTPUT
+          echo "cs=$CS" >> $GITHUB_OUTPUT
 
       - name: Create or update preview link comment
         uses: peter-evans/create-or-update-comment@v2
@@ -278,7 +278,7 @@ jobs:
           edit-mode: replace
           body: |
             ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
-
+            elo: ${{ steps.data.outputs.cs }}
             <!-- __PREVIEW_DEPLOYMENT__ -->
             <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
             <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
