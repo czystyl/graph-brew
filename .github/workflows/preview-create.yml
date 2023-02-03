@@ -115,10 +115,10 @@ jobs:
             "
 
           PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
-          REGEX="(Connection string: )(.*)( Save)"
+          REGEX="Connection string: (.*) Save"
 
           if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
-            echo "pg-connection-string=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}            
           else
             echo "OPS problem"
             exit 1
@@ -133,7 +133,7 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo ${{ steps.create-database.outputs.pg-connection-string }} | sed "s/.internal:/.fly.dev:/g")
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
 
           echo $CONNECTION_STRING | base64
           echo "url=321${CONNECTION_STRING}123" >> $GITHUB_OUTPUT

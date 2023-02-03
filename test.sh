@@ -2,11 +2,21 @@ APP_NAME="focus-brew-pg"
 
 # flyctl check if app exists
 
-body="## 🏗️ Building preview environment... <!-- __PREVIEW_DEPLOYMENT__ -->"
-regex="__PREVIEW_URL: (.*) -->"
+# body="## 🏗️ Building preview environment... <!-- __PREVIEW_DEPLOYMENT__ -->"
+# regex="__PREVIEW_URL: (.*) -->"
 
-[[ $body =~ $regex ]]
-echo ${BASH_REMATCH[1]}
+# [[ $body =~ $regex ]]
+# echo ${BASH_REMATCH[1]}
+
+
+TEXT="123"
+
+if [[ $TEXT == *"123"* ]]; then
+    ELO=123
+    echo "OK"
+fi
+
+echo $ELO
 
 
 # DB_CONNECTION_STRING=""
