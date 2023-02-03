@@ -152,6 +152,9 @@ jobs:
 
       - name: format connection-string
         run: |
+
+          # echo ${{  }}
+
           if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
             echo esa
           elif [[ "${{ steps.create-database.outputs.url }}" ]]; then
