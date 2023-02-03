@@ -140,8 +140,8 @@ jobs:
 
       - name: format connection-string
         run: |
-          echo ${{ needs.get-preview-state.outputs.url }}
-          echo "url=${{ needs.get-preview-state.outputs.url }}" >> $GITHUB_OUTPUT
+          echo ${{ needs.get-preview-state.outputs.preview-url }}
+          echo ${{ needs.get-preview-state.outputs.pg-connection-string }}
 
       # - name: Alocate IP
       #   if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
