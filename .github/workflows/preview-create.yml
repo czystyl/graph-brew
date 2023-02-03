@@ -264,7 +264,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            1: ${{ echo sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899 | base64  }} :2
+            1: ${{ sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899 | base64  }} :2
 
 ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
 
