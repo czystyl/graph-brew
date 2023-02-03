@@ -102,12 +102,16 @@ jobs:
       #   run: echo "EXISTS[${{ needs.get-preview-state.outputs.pg-connection-string }}]EXISTS"
 
       - name: Delete database if needed
+        id: delete-database
         if: steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.pg-connection-string
-        run: flyctl apps destroy ${{ needs.generate-preview-url.outputs.preview-hash }} --yes
+        run: |
+          echo 123
+          # flyctl apps destroy ${{ needs.generate-preview-url.outputs.preview-hash }} --yes
+          echo "database-deleted=true" >> $GITHUB_OUTPUT
 
       - name: Create database
         id: create-database
-        if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.pg-connection-string
+        if: steps.delete-database.outputs.database-deleted || !needs.get-preview-state.outputs.pg-connection-string
         run: |
           PG_CREATE_COMMAND="
               flyctl postgres create \
