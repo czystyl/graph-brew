@@ -82,9 +82,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: echo ${{ needs.get-preview-state.outputs.pg-connection-string }}
+      - run: echo ${{ !needs.get-preview-state.outputs.pg-connection-string }}
       - name: Check if Database exists
         id: check-database
-        if: ${{ !needs.get-preview-state.outputs.pg-connection-string }}
+        if: ${{ needs.get-preview-state.outputs.pg-connection-string }}
         run: |
           FLY_APPS=$(flyctl apps list)
           PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
