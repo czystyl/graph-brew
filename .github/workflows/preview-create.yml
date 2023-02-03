@@ -70,52 +70,35 @@ jobs:
             ## 🏗️ Building preview environment...
             <!-- __PREVIEW_DEPLOYMENT__ -->
 
-  check-database:
+  preview-database:
     runs-on: ubuntu-latest
     needs:
+      - get-preview-state
       - generate-preview-url
     outputs:
-      database-exists: ${{ steps.check-database.outputs.database-exists }}
+      connection-string: ${{ steps.connection-string.outputs.url }}
     env:
       BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
     steps:
+      - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Check if Database exists
         id: check-database
+        if: ${{ !needs.get-preview-state.outputs.pg-connection-string }}
         run: |
           FLY_APPS=$(flyctl apps list)
           PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
 
           if [[ FLY_APPS =~ PREVIEW_HASH ]]; then
               echo "database-exists=1" >> $GITHUB_OUTPUT
-           else  
-              echo "database-exists=1" >> $GITHUB_OUTPUT
           fi
 
-  reset-database:
-    runs-on: ubuntu-latest
-    if: always() && !needs.get-preview-state.outputs.pg-connection-string && needs.check-database.outputs.database-exists
-    needs:
-      - get-preview-state
-      - check-database
-      - generate-preview-url
-    steps:
-      - run: echo "RESET"
+      - name: test
+        run: echo "test"
 
-  create-database:
-    runs-on: ubuntu-latest
-    needs:
-      - get-preview-state
-      - check-database
-      - generate-preview-url
-    outputs:
-      connection-string: ${{ steps.connection-string.outputs.url }}
-    if: always() && !needs.get-preview-state.outputs.pg-connection-string && !needs.check-database.outputs.database-exists
-    env:
-      BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # - name: Delete database
+      #   run: flyctl apps destroy ${{ needs.generate-preview-url.outputs.preview-hash }} --yes
+
       # - name: Create database
       #   id: create-database
       #   run: |
@@ -224,11 +207,11 @@ jobs:
   #   runs-on: ubuntu-latest
   #   needs:
   #     - alias-preview
-  #     - prepare-preview-state
+  #     - get-preview-state
   #   steps:
   #     - name: Remove previous preview environment
   #       run: |
-  #         VERCEL_PREVIEW_URL="${{ needs.prepare-preview-state.outputs.url }}"
+  #         VERCEL_PREVIEW_URL="${{ needs.get-preview-state.outputs.url }}"
 
   #         if [ $VERCEL_PREVIEW_URL ]; then
   #             vercel remove $VERCEL_PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
@@ -240,8 +223,10 @@ jobs:
   #   name: Update preview state
   #   runs-on: ubuntu-latest
   #   needs:
-  #     - alias-preview
+  #     # - alias-preview
   #     - generate-preview-url
+  #     - create-database
+  #     - get-preview-state
   #   steps:
   #     - name: Find preview environment comment to update
   #       uses: peter-evans/find-comment@v2
@@ -259,5 +244,7 @@ jobs:
   #         edit-mode: replace
   #         body: |
   #           ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
-  #           <!-- __VERCEL_DEPLOYMENT__ -->
-  #           <!-- __VERCEL_PREVIEW_URL: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
+
+  #           <!-- __PREVIEW_DEPLOYMENT__ -->
+  #           # <!-- __PREVIEW_URL:: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
+  #           <!-- __DATABASE_CONNECTION_STRING:: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
