@@ -47,7 +47,7 @@ jobs:
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ $COMMENT_BODY =~ $REGEX ]]; then
-              echo "preview_url=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+              echo "preview_url=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
           fi
 
       - name: Get current preview database
@@ -283,4 +283,4 @@ jobs:
 
             <!-- __PREVIEW_DEPLOYMENT__ -->
             <!-- __PREVIEW_URL:: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
-            <!-- __DATABASE_CONNECTION_STRING:: ${{ needs.preview-database.outputs.connection-string }} -->
+            <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
