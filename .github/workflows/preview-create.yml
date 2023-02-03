@@ -151,6 +151,11 @@ jobs:
           echo $CONNECTION_STRING
 
           echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v3
+        name: Upload Artifact
+        with:
+          name: SecretsVariables
+          path: "secrets.txt"
 
       - name: format connection-string
         run: |
