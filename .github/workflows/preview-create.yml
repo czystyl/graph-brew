@@ -76,7 +76,7 @@ jobs:
       - get-preview-state
       - generate-preview-url
     outputs:
-      connection-string: ${{ steps.connection-string.outputs.url }}
+      connection-string: ${{ steps.encoded-connection-string.outputs.uri }}
     env:
       BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
     steps:
@@ -92,14 +92,6 @@ jobs:
           if [[ $FLY_APPS =~ $PREVIEW_HASH ]]; then
               echo "database-exists=true" >> $GITHUB_OUTPUT
           fi
-
-      # - name: TEST1
-      #   if: always() && needs.get-preview-state.outputs.pg-connection-string
-      #   run: echo "EXISTS[${{ needs.get-preview-state.outputs.pg-connection-string }}]EXISTS"
-
-      # - name: TEST2
-      #   if: always() && !needs.get-preview-state.outputs.pg-connection-string
-      #   run: echo "EXISTS[${{ needs.get-preview-state.outputs.pg-connection-string }}]EXISTS"
 
       - name: Delete database if needed
         id: delete-database
@@ -142,30 +134,16 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          echo $INTERNAL_CONNECTION_STRING > test.txt
-
-          cat test.txt
-
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | xargs) 
-
-          echo $CONNECTION_STRING
-
           echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
-      - uses: actions/upload-artifact@v3
-        name: Upload Artifact
-        with:
-          name: SecretsVariables
-          path: test.txt
 
-      - name: format connection-string
+      - name: Set connection string
+        id: encoded-connection-string
         run: |
-          echo "${{steps.create-database.outputs.url}}"
-          echo "${{steps.create-database.outputs.url}}"
-
           if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
-            echo esa
+            echo "uri=needs.get-preview-state.outputs.pg-connection-string" >> $GITHUB_OUTPUT
           elif [[ "${{ steps.create-database.outputs.url }}" ]]; then
-            echo elo        
+            echo "uri=${{ steps.create-database.outputs.url }}" >> $GITHUB_OUTPUT
           else
             echo ERROOOORRRRR
             exit 1
@@ -275,32 +253,32 @@ jobs:
   #             echo "No previous Preview Environment"
   #         fi
 
-  # update-deployment-comment:
-  #   name: Update preview state
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     # - alias-preview
-  #     - generate-preview-url
-  #     - create-database
-  #     - get-preview-state
-  #   steps:
-  #     - name: Find preview environment comment to update
-  #       uses: peter-evans/find-comment@v2
-  #       if: success() && github.event.number
-  #       id: preview-comment
-  #       with:
-  #         issue-number: ${{ github.event.number }}
-  #         body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
+  update-deployment-comment:
+    name: Update preview state
+    runs-on: ubuntu-latest
+    needs:
+      # - alias-preview
+      - generate-preview-url
+      - preview-database
+      - get-preview-state
+    steps:
+      - name: Find preview environment comment to update
+        uses: peter-evans/find-comment@v2
+        if: success() && github.event.number
+        id: preview-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: <!-- __VERCEL_DEPLOYMENT__ -->
 
-  #     - name: Create or update preview link comment
-  #       uses: peter-evans/create-or-update-comment@v2
-  #       with:
-  #         comment-id: ${{ steps.preview-comment.outputs.comment-id }}
-  #         issue-number: ${{ github.event.pull_request.number }}
-  #         edit-mode: replace
-  #         body: |
-  #           ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
+      - name: Create or update preview link comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
 
-  #           <!-- __PREVIEW_DEPLOYMENT__ -->
-  #           # <!-- __PREVIEW_URL:: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
-  #           <!-- __DATABASE_CONNECTION_STRING:: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
+            <!-- __PREVIEW_DEPLOYMENT__ -->
+            <!-- __PREVIEW_URL:: ${{ steps.vercel-preview.outputs.VERCEL_PREVIEW_URL }} -->
+            <!-- __DATABASE_CONNECTION_STRING:: ${{ needs.preview-database.outputs.connection-string }} -->
