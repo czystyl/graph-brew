@@ -91,10 +91,12 @@ jobs:
 
           if [[ $FLY_APPS =~ $PREVIEW_HASH ]]; then
               echo "database-exists=true" >> $GITHUB_OUTPUT
+          else
+              echo "database-exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - run: echo "[${{needs.get-preview-state.outputs.pg-connection-string}}]"
-      - run: echo "[${{steps.check-database.outputs.database-exists}}]"
+      - run: echo "[${{ needs.get-preview-state.outputs.pg-connection-string }}]"
+      - run: echo "[${{ steps.check-database.outputs.database-exists }}]"
 
       - name: Delete database if needed
         if: always() && !needs.get-preview-state.outputs.pg-connection-string && steps.check-database.outputs.database-exists
