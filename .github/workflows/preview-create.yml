@@ -103,7 +103,7 @@ jobs:
 
       - name: Create database
         id: create-database
-        if: always() && !needs.get-preview-state.outputs.url
+        if: always() && !needs.get-preview-state.outputs.pg-connection-string && steps.check-database.outputs.database-exists != 1
         run: |
           PG_CREATE_COMMAND="
               flyctl postgres create \
