@@ -141,7 +141,7 @@ jobs:
         run: |
           if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
             echo esa
-          elseif [[ "${{ steps.create-database.outputs.url }}" ]]; then
+          elif [[ "${{ steps.create-database.outputs.url }}" ]]; then
             echo elo        
           else
             echo ERROOOORRRRR
