@@ -96,7 +96,7 @@ jobs:
 
       - name: Delete database if needed
         id: delete-db
-        if: always() && !needs.get-preview-state.outputs.pg-connection-string && steps.check-database.outputs.database-exists == 1
+        if: always() && !needs.get-preview-state.outputs.pg-connection-string && steps.check-database.outputs.database-exists != 1
         run: |
           flyctl apps destroy ${{ needs.generate-preview-url.outputs.preview-hash }} --yes
           echo "deleted=1" >> $GITHUB_OUTPUT
@@ -141,7 +141,7 @@ jobs:
 
       - name: format connection-string
         run: |
-          if [[  ]]
+
           echo ${{ steps.create-database.outputs.url }}
           echo ${{ needs.get-preview-state.outputs.preview-url }}
           echo ${{ needs.get-preview-state.outputs.pg-connection-string }}
