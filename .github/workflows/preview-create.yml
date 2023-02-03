@@ -270,7 +270,7 @@ jobs:
 
           echo $CS
 
-          echo "cs="$CS" >> $GITHUB_OUTPUT
+          echo "cs="$CS"" >> $GITHUB_OUTPUT
 
       - run: echo ${{ steps.data.outputs.cs }}
 
