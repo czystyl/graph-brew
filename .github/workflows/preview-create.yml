@@ -138,6 +138,11 @@ jobs:
           echo $CONNECTION_STRING | base64
           echo "url=${CONNECTION_STRING}" >> $GITHUB_OUTPUT
 
+      - name: format connection-string
+        run: |
+          echo ${{ needs.get-preview-state.outputs.url }}
+          echo "url=${{ needs.get-preview-state.outputs.url }}" >> $GITHUB_OUTPUT
+
       # - name: Alocate IP
       #   if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
       #   run: flyctl ips allocate-v4 --app $BRANCH_NAME
