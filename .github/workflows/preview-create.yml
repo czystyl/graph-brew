@@ -260,7 +260,7 @@ jobs:
       - name: data
         id: data
         run: |
-          connection_string="sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899"
+          connection_string="sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899sopttestsllsopttestsJrnmtKUH6cjlCcQa4719c80b6fe911b091a7c05124b64eeeceainternals9899"
 
           echo $connection_string
           echo $connection_string | base64
@@ -270,7 +270,7 @@ jobs:
 
           echo $CS
 
-          echo "cs="$CS"" >> $GITHUB_OUTPUT
+          echo "cs="$connection_string"" >> $GITHUB_OUTPUT
 
       - run: echo ${{ steps.data.outputs.cs }}
 
