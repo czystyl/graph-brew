@@ -92,10 +92,6 @@ jobs:
               echo "database-exists=1" >> $GITHUB_OUTPUT
           fi
 
-      - name: test
-        if: always() && !steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
-        run: echo "test"
-
       - name: Delete database
         if: always() && steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
         run: flyctl apps destroy ${{ needs.generate-preview-url.outputs.preview-hash }} --yes
