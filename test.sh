@@ -9,14 +9,13 @@ APP_NAME="focus-brew-pg"
 # echo ${BASH_REMATCH[1]}
 
 
-TEXT="123"
-
-if [[ $TEXT == *"123"* ]]; then
-    ELO=123
-    echo "OK"
-fi
-
-echo $ELO
+  if [[ "3213131" ]]; then
+    echo esa
+  fi
+  
+  if [[ "" ]]; then
+    echo elo            
+  fi
 
 
 # DB_CONNECTION_STRING=""
