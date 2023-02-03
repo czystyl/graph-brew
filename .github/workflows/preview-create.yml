@@ -89,14 +89,14 @@ jobs:
           PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
 
           if [[ FLY_APPS =~ PREVIEW_HASH ]]; then
+              echo "exists"
               echo "database-exists=1" >> $GITHUB_OUTPUT
           fi
 
       - run: echo ${{steps.check-database.outputs.database-exists}}
-      - run: echo ${{needs.get-preview-state.outputs.url}}
 
-      - name: Delete database
-        if: always() && steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.url
+      - name: Delete database if needed
+        if: always() && steps.check-database.outputs.database-exists == 1 && !needs.get-preview-state.outputs.url
         run: flyctl apps destroy ${{ needs.generate-preview-url.outputs.preview-hash }} --yes
 
       - name: Create database
