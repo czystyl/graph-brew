@@ -269,12 +269,12 @@ jobs:
           CS=$(echo $connection_string | base64)
 
 
-          echo CS
+          echo $CS
 
           CS="${CS//'%'/'%25'}"
-          echo CS
+          echo $CS
           CS="${CS//$'\n'/'%0A'}"
-          echo CS
+          echo $CS
           CS="${CS//$'\r'/'%0D'}"
 
           echo $CS
