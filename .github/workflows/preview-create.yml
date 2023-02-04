@@ -26,15 +26,19 @@ jobs:
           echo "preview-sha=$BRANCH_SHA" >> $GITHUB_OUTPUT
 
   test:
+    runs-on: ubuntu-latest
     name: Elo
     needs:
       - generate-preview-url
     steps:
       - name: Run Migrations
-        env:
-          DATABASE_URL: ${{ needs.generate-preview-url.outputs.preview-hash }}
         run: |
-          echo "elo"
+          FOO=$(echo ${{ needs.generate-preview-url.outputs.preview-hash }} | base64 )
+
+          echo "DATABASE_URL=${FOO}" >> $GITHUB_ENV
+
+      - run: |
+          echo 123
           echo ${{ env.DATABASE_URL }}
 
   # get-preview-state:
