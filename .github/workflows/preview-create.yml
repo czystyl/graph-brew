@@ -199,8 +199,8 @@ jobs:
 
       - name: Build Project Artifacts
         run: |
-          pnpx prisma generate
           vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          pnpx prisma generate
 
       - name: Run Migrations
         run: |
