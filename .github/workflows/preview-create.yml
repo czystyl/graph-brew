@@ -134,8 +134,8 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64)
-          CONNECTION_STRING="${CONNECTION_STRING//$'\n'/''}"
+          # Github Actions adds space in the middle of encoded connection string so we have to remove it
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/ //g')
 
           echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
