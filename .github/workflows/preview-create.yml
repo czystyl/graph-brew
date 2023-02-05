@@ -99,9 +99,7 @@ jobs:
 
       - name: Replace Environment Variables
         run: |
-          ls .vercel
           vars=$(cat .vercel/.env.preview.local)
-          echo $vars
 
           DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }}
 
@@ -110,13 +108,14 @@ jobs:
           if [[ $vars =~ $DB_REGEX ]]; then
             echo "DATABASE_URL=${BASH_REMATCH[1]}" >> $GITHUB_ENV
             echo ${BASH_REMATCH[1]}
+            vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }}
           else
             echo "No match"
           fi
 
           echo $DATABASE_URL
 
-          echo $DATABASE_URL | vercel env add DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }} preview --token=${{ secrets.VERCEL_TOKEN }}
+          echo 123v | vercel env add DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }} preview --token=${{ secrets.VERCEL_TOKEN }}
 
   # preview-database:
   #   runs-on: ubuntu-latest
