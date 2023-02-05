@@ -60,95 +60,11 @@ jobs:
             ## 🏗️ Building preview environment...
             <!-- __PREVIEW_DEPLOYMENT__ -->
 
-  preview-database:
-    runs-on: ubuntu-latest
-    needs:
-      - get-preview-state
-      - generate-preview-url
-    outputs:
-      connection-string: ${{ steps.encoded-connection-string.outputs.uri }}
-    env:
-      BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-
-      - name: Check if Database exists
-        id: check-database
-        run: |
-          FLY_APPS=$(flyctl apps list)
-          PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
-
-          if [[ $FLY_APPS =~ $PREVIEW_HASH ]]; then
-              echo "database-exists=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Delete database if needed
-        id: delete-database
-        if: steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.pg-connection-string
-        run: |
-          flyctl apps destroy ${{ needs.generate-preview-url.outputs.preview-hash }} --yes
-          echo "database-deleted=true" >> $GITHUB_OUTPUT
-
-      - name: Create database
-        id: create-database
-        if: steps.delete-database.outputs.database-deleted || !needs.get-preview-state.outputs.pg-connection-string
-        run: |
-          PG_CREATE_COMMAND="
-              flyctl postgres create \
-              --name $BRANCH_NAME \
-              --org product-brew \
-              --region waw \
-              --vm-size shared-cpu-1x - 256 \
-              --initial-cluster-size 1 \
-              --volume-size 1 \
-              --image-ref flyio/postgres:14
-            "
-
-          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
-          REGEX="(Connection string: )(.*)( Save)"
-
-          if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
-            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[2]}
-          else
-            echo "OPS problem"
-            exit 1
-          fi
-
-          flyctl ips allocate-v4 --app $BRANCH_NAME
-
-          sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
-
-          flyctl deploy \
-            --app $BRANCH_NAME \
-            --image flyio/postgres:14 \
-            --auto-confirm
-
-          # Github Actions adds space in the middle of encoded connection string so we have to remove it
-          # CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/ //g')
-
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
-
-          echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
-
-      - name: Set connection string
-        id: encoded-connection-string
-        run: |
-          if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
-            echo "uri=${{ needs.get-preview-state.outputs.pg-connection-string }}" >> $GITHUB_OUTPUT
-          elif [[ "${{ steps.create-database.outputs.url }}" ]]; then
-            echo "uri=${{ steps.create-database.outputs.url }}" >> $GITHUB_OUTPUT
-          else
-            echo ERROOOORRRRR
-            exit 1
-          fi
-
-  deploy-preview:
-    name: Deploy preview environment
+  get-database:
+    name: Get Database URL
     runs-on: ubuntu-latest
     needs:
       - generate-preview-url
-      - preview-database
     outputs:
       url: ${{ steps.deploy.outputs.url }}
     steps:
@@ -183,99 +99,241 @@ jobs:
 
       - name: Replace Environment Variables
         run: |
+          ls .vercel
           vars=$(cat .vercel/.env.preview.local)
+          echo $vars
+
+          DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }}
 
           DB_REGEX='DATABASE_URL="(.*)"[[:space:]]'
 
           if [[ $vars =~ $DB_REGEX ]]; then
+            echo "DATABASE_URL=${BASH_REMATCH[1]}" >> $GITHUB_ENV
             echo ${BASH_REMATCH[1]}
           else
             echo "No match"
           fi
 
-          echo "DATABASE_URL={{ needs.preview-database.outputs.connection-string }}" >> $GITHUB_ENV
-
           echo $DATABASE_URL
 
-          # sed -i "/^NEXT_PUBLIC_ALL_ENV=/s/=.*/=${{ needs.preview-database.outputs.connection-string }}/" .vercel/.env.preview.local
+          echo $DATABASE_URL | vercel env add DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }} preview --token=${{ secrets.VERCEL_TOKEN }}
 
-          echo ${{ needs.preview-database.outputs.connection-string }} | vercel env add DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }} preview --token=${{ secrets.VERCEL_TOKEN }}
+  # preview-database:
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - get-preview-state
+  #     - generate-preview-url
+  #   outputs:
+  #     connection-string: ${{ steps.encoded-connection-string.outputs.uri }}
+  #   env:
+  #     BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Build Project Artifacts
-        run: |
-          cat .vercel/.env.preview.local
-          vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          pnpx prisma generate
+  #     - name: Check if Database exists
+  #       id: check-database
+  #       run: |
+  #         FLY_APPS=$(flyctl apps list)
+  #         PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
 
-      - name: Run Migrations
-        run: |
-          echo $DATABASE_URL
+  #         if [[ $FLY_APPS =~ $PREVIEW_HASH ]]; then
+  #             echo "database-exists=true" >> $GITHUB_OUTPUT
+  #         fi
 
-          pnpx prisma migrate deploy
+  #     - name: Delete database if needed
+  #       id: delete-database
+  #       if: steps.check-database.outputs.database-exists && !needs.get-preview-state.outputs.pg-connection-string
+  #       run: |
+  #         flyctl apps destroy ${{ needs.generate-preview-url.outputs.preview-hash }} --yes
+  #         echo "database-deleted=true" >> $GITHUB_OUTPUT
 
-      - name: Deploy Project Artifacts to Vercel
-        id: deploy
-        run: |
-          DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=${DOMAIN}" >> $GITHUB_OUTPUT
+  #     - name: Create database
+  #       id: create-database
+  #       if: steps.delete-database.outputs.database-deleted || !needs.get-preview-state.outputs.pg-connection-string
+  #       run: |
+  #         PG_CREATE_COMMAND="
+  #             flyctl postgres create \
+  #             --name $BRANCH_NAME \
+  #             --org product-brew \
+  #             --region waw \
+  #             --vm-size shared-cpu-1x - 256 \
+  #             --initial-cluster-size 1 \
+  #             --volume-size 1 \
+  #             --image-ref flyio/postgres:14
+  #           "
 
-  alias-preview:
-    name: Add environment URL alias
-    runs-on: ubuntu-latest
-    needs:
-      - deploy-preview
-      - generate-preview-url
-    steps:
-      - name: Alias current deployment
-        run: |
-          vercel alias \
-            ${{ needs.deploy-preview.outputs.url }} \
-            ${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app \
-            --token=${{ secrets.VERCEL_TOKEN }}
+  #         PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
+  #         REGEX="(Connection string: )(.*)( Save)"
 
-  remove-old-preview:
-    name: Remove old environment
-    runs-on: ubuntu-latest
-    needs:
-      - alias-preview
-      - get-preview-state
-    steps:
-      - name: Remove previous preview environment
-        run: |
-          PREVIEW_URL="${{ needs.get-preview-state.outputs.preview-url }}"
+  #         if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
+  #           INTERNAL_CONNECTION_STRING=${BASH_REMATCH[2]}
+  #         else
+  #           echo "OPS problem"
+  #           exit 1
+  #         fi
 
-          if [ $PREVIEW_URL ]; then
-              vercel remove $PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
-          else
-              echo "No previous Preview Environment"
-          fi
+  #         flyctl ips allocate-v4 --app $BRANCH_NAME
 
-  update-deployment-comment:
-    name: Update preview state
-    runs-on: ubuntu-latest
-    needs:
-      - alias-preview
-      - generate-preview-url
-      - preview-database
-      - deploy-preview
-    steps:
-      - name: Find preview environment comment to update
-        uses: peter-evans/find-comment@v2
-        if: success() && github.event.number
-        id: preview-comment
-        with:
-          issue-number: ${{ github.event.number }}
-          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+  #         sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
 
-      - name: Create or update preview link comment
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
+  #         flyctl deploy \
+  #           --app $BRANCH_NAME \
+  #           --image flyio/postgres:14 \
+  #           --auto-confirm
 
-            <!-- __PREVIEW_DEPLOYMENT__ -->
-            <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
-            <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
+  #         # Github Actions adds space in the middle of encoded connection string so we have to remove it
+  #         # CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/ //g')
+
+  #         CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
+
+  #         echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+
+  #     - name: Set connection string
+  #       id: encoded-connection-string
+  #       run: |
+  #         if [[ "${{ needs.get-preview-state.outputs.pg-connection-string }}" ]]; then
+  #           echo "uri=${{ needs.get-preview-state.outputs.pg-connection-string }}" >> $GITHUB_OUTPUT
+  #         elif [[ "${{ steps.create-database.outputs.url }}" ]]; then
+  #           echo "uri=${{ steps.create-database.outputs.url }}" >> $GITHUB_OUTPUT
+  #         else
+  #           echo ERROOOORRRRR
+  #           exit 1
+  #         fi
+
+  # deploy-preview:
+  #   name: Deploy preview environment
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - generate-preview-url
+  #     - preview-database
+  #   outputs:
+  #     url: ${{ steps.deploy.outputs.url }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+
+  #     - uses: pnpm/action-setup@v2
+  #       name: Install pnpm
+  #       id: pnpm-install
+  #       with:
+  #         version: 7
+  #         run_install: false
+
+  #     - name: Get pnpm store directory
+  #       id: pnpm-cache
+  #       shell: bash
+  #       run: |
+  #         echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+  #     - uses: actions/cache@v3
+  #       name: Setup pnpm cache
+  #       with:
+  #         path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-pnpm-store-
+
+  #     - name: Install Vercel CLI
+  #       run: pnpm add vercel@latest --global
+
+  #     - name: Pull Vercel Preview  Environment Information
+  #       run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+  #     - name: Replace Environment Variables
+  #       run: |
+  #         vars=$(cat .vercel/.env.preview.local)
+
+  #         DB_REGEX='DATABASE_URL="(.*)"[[:space:]]'
+
+  #         if [[ $vars =~ $DB_REGEX ]]; then
+  #           echo ${BASH_REMATCH[1]}
+  #         else
+  #           echo "No match"
+  #         fi
+
+  #         echo "DATABASE_URL={{ needs.preview-database.outputs.connection-string }}" >> $GITHUB_ENV
+
+  #         echo $DATABASE_URL
+
+  #         # sed -i "/^NEXT_PUBLIC_ALL_ENV=/s/=.*/=${{ needs.preview-database.outputs.connection-string }}/" .vercel/.env.preview.local
+
+  #         echo ${{ needs.preview-database.outputs.connection-string }} | vercel env add DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }} preview --token=${{ secrets.VERCEL_TOKEN }}
+
+  #     - name: Build Project Artifacts
+  #       run: |
+  #         cat .vercel/.env.preview.local
+  #         vercel build --token=${{ secrets.VERCEL_TOKEN }}
+  #         pnpx prisma generate
+
+  #     - name: Run Migrations
+  #       run: |
+  #         echo $DATABASE_URL
+
+  #         pnpx prisma migrate deploy
+
+  #     - name: Deploy Project Artifacts to Vercel
+  #       id: deploy
+  #       run: |
+  #         DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+  #         echo "url=${DOMAIN}" >> $GITHUB_OUTPUT
+
+  # alias-preview:
+  #   name: Add environment URL alias
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - deploy-preview
+  #     - generate-preview-url
+  #   steps:
+  #     - name: Alias current deployment
+  #       run: |
+  #         vercel alias \
+  #           ${{ needs.deploy-preview.outputs.url }} \
+  #           ${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app \
+  #           --token=${{ secrets.VERCEL_TOKEN }}
+
+  # remove-old-preview:
+  #   name: Remove old environment
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - alias-preview
+  #     - get-preview-state
+  #   steps:
+  #     - name: Remove previous preview environment
+  #       run: |
+  #         PREVIEW_URL="${{ needs.get-preview-state.outputs.preview-url }}"
+
+  #         if [ $PREVIEW_URL ]; then
+  #             vercel remove $PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
+  #         else
+  #             echo "No previous Preview Environment"
+  #         fi
+
+  # update-deployment-comment:
+  #   name: Update preview state
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - alias-preview
+  #     - generate-preview-url
+  #     - preview-database
+  #     - deploy-preview
+  #   steps:
+  #     - name: Find preview environment comment to update
+  #       uses: peter-evans/find-comment@v2
+  #       if: success() && github.event.number
+  #       id: preview-comment
+  #       with:
+  #         issue-number: ${{ github.event.number }}
+  #         body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+
+  #     - name: Create or update preview link comment
+  #       uses: peter-evans/create-or-update-comment@v2
+  #       with:
+  #         comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+  #         issue-number: ${{ github.event.pull_request.number }}
+  #         edit-mode: replace
+  #         body: |
+  #           ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-url.outputs.preview-hash }}.vercel.app)
+
+  #           <!-- __PREVIEW_DEPLOYMENT__ -->
+  #           <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
+  #           <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
