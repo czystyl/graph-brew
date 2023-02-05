@@ -1,5 +1,9 @@
-TEST_STRING="Hello World!"
+vars=$(cat .vercel/.env.preview.local)
 
-TEST=$(echo $TEST_STRING | sed 's/ //g')
+DB_REGEX='DATABASE_URL="(.*)"[[:space:]]'
 
-echo $TEST
+if [[ $vars =~ $DB_REGEX ]]; then
+  echo ${BASH_REMATCH[1]}
+fi
+
+

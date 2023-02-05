@@ -50,16 +50,6 @@ jobs:
               echo "preview_url=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get current preview database
-        id: preview-database
-        run: |
-          REGEX="__DATABASE_CONNECTION_STRING: (.*) -->"
-          COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
-
-          if [[ "$COMMENT_BODY" =~ $REGEX ]]; then
-              echo "connection-string="${BASH_REMATCH[1]}"" >> $GITHUB_OUTPUT
-          fi
-
       - name: Create or update preview environment comment
         uses: peter-evans/create-or-update-comment@v2
         with:
@@ -157,6 +147,7 @@ jobs:
     name: Deploy preview environment
     runs-on: ubuntu-latest
     needs:
+      - generate-preview-url
       - preview-database
     outputs:
       url: ${{ steps.deploy.outputs.url }}
@@ -187,17 +178,28 @@ jobs:
       - name: Install Vercel CLI
         run: pnpm add vercel@latest --global
 
+      - name: Pull Vercel Preview  Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
       - name: Replace Environment Variables
         run: |
+          vars=$(cat .vercel/.env.preview.local)
+
+          DB_REGEX='DATABASE_URL="(.*)"[[:space:]]'
+
+          if [[ $vars =~ $DB_REGEX ]]; then
+            echo ${BASH_REMATCH[1]}
+          elif
+            echo nima
+          fi
+
           echo "DATABASE_URL={{ needs.preview-database.outputs.connection-string }}" >> $GITHUB_ENV
 
           echo $DATABASE_URL
 
           # sed -i "/^NEXT_PUBLIC_ALL_ENV=/s/=.*/=${{ needs.preview-database.outputs.connection-string }}/" .vercel/.env.preview.local
-          echo ${{ needs.preview-database.outputs.connection-string }} | vercel env add DATABASE_URL preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Pull Vercel Preview  Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          echo ${{ needs.preview-database.outputs.connection-string }} | vercel env add DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }} preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
         run: |
