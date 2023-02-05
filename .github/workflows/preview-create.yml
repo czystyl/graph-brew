@@ -103,7 +103,7 @@ jobs:
 
           DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }}
 
-          DB_REGEX='DATABASE_URL="(.*)"[[:space:]]'
+          DB_REGEX='$DATABASE_URL_KEY="(.*)"[[:space:]]'
 
           if [[ $vars =~ $DB_REGEX ]]; then
             echo "DATABASE_URL=${BASH_REMATCH[1]}" >> $GITHUB_ENV
