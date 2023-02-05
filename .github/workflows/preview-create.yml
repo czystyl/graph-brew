@@ -135,7 +135,8 @@ jobs:
             --auto-confirm
 
           # Github Actions adds space in the middle of encoded connection string so we have to remove it
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/ //g')
+          # CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/ //g')
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
 
           echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
@@ -185,20 +186,22 @@ jobs:
       - name: Install Vercel CLI
         run: pnpm add vercel@latest --global
 
+      - name: Replace Environment Variables
+        run: |
+          # DATABASE_URL=$(echo ${{ needs.preview-database.outputs.connection-string }} | base64 -d)
+
+          # echo "DATABASE_URL=${DATABASE_URL}" >> $GITHUB_ENV
+          # echo "DATABASE_URL=${DATABASE_URL}" >> .vercel/.env.preview.local
+
+          # sed -i "/^NEXT_PUBLIC_ALL_ENV=/s/=.*/=${{ needs.preview-database.outputs.connection-string }}/" .vercel/.env.preview.local
+          echo ${{ needs.preview-database.outputs.connection-string }} | vercel env add DATABASE_URL preview
+
       - name: Pull Vercel Preview  Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Replace Environment Variables
-        run: |
-          DATABASE_URL=$(echo ${{ needs.preview-database.outputs.connection-string }} | base64 -d)
-
-          echo "DATABASE_URL=${DATABASE_URL}" >> $GITHUB_ENV
-          echo "DATABASE_URL=${DATABASE_URL}" >> .vercel/.env.preview.local
-
-          sed -i "/^NEXT_PUBLIC_ALL_ENV=/s/=.*/=${{ needs.preview-database.outputs.connection-string }}/" .vercel/.env.preview.local
-
       - name: Build Project Artifacts
         run: |
+          cat .vercel/.env.preview.local
           vercel build --token=${{ secrets.VERCEL_TOKEN }}
           pnpx prisma generate
 
