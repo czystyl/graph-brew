@@ -103,6 +103,8 @@ jobs:
 
           DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }}
 
+          echo $DATABASE_URL_KEY
+
           DB_REGEX='$DATABASE_URL_KEY="(.*)"[[:space:]]'
 
           if [[ $vars =~ $DB_REGEX ]]; then
