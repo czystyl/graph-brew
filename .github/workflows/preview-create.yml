@@ -103,7 +103,7 @@ jobs:
 
           DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }}
 
-
+          cat $vars
 
           echo $DATABASE_URL_KEY
 
