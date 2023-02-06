@@ -218,7 +218,7 @@ jobs:
           SUB="$DATABASE_URL_KEY=\"$DATABASE_URL\""
 
           if [[ "$ENV_VARIABLES" == *"$SUB"* ]]; then
-            vercel env rm DATABASE_URL_$PREVIEW_SHA --yes
+            vercel env rm DATABASE_URL_$PREVIEW_SHA --yes --token=${{ secrets.VERCEL_TOKEN }} || true
             echo $DATABASE_URL | vercel env add DATABASE_URL_$PREVIEW_SHA preview --token=${{ secrets.VERCEL_TOKEN }}
           fi
 
