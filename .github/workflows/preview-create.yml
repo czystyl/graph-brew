@@ -180,8 +180,6 @@ jobs:
       - preview-database
     outputs:
       URL: ${{ steps.deploy.outputs.URL }}
-    env:
-      DATABASE_URL: ${{ needs.preview-database.outputs.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v3
 
@@ -209,6 +207,14 @@ jobs:
       - name: Install Vercel CLI
         run: pnpm add vercel@latest --global
 
+      - name: Update DATABASE_URL
+        run: |
+          DATABASE_URL=${{ needs.preview-database.outputs.DATABASE_URL }}
+
+          if [[$DATABASE_URL]]; then
+            echo we have it 
+          fi
+
       - name: Pull Vercel Preview  Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
@@ -226,14 +232,13 @@ jobs:
 
       - name: Build Project Artifacts
         run: |
-          cat .vercel/.env.preview.local
           vercel build --token=${{ secrets.VERCEL_TOKEN }}
           pnpx prisma generate
 
       - name: Run Migrations
         run: |
+          source .vercel/.env.preview.local
           echo $DATABASE_URL
-          echo ${{env.DATABASE_URL}}
 
           pnpx prisma migrate deploy
 
