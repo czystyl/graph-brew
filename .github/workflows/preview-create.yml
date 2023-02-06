@@ -289,7 +289,7 @@ jobs:
           echo "${{ needs.preview-database-test.outputs.URL }}"                  
           echo "${{ needs.preview-database-url.outputs.URL }}"
 
-          NEW_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}" | base64 -d
+          NEW_DATABASE_URL=$(echo "${{ needs.preview-database-test.outputs.URL }}" | base64 -d)
           EXISTING_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"         
 
           echo $NEW_DATABASE_URL
