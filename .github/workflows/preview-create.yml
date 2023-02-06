@@ -180,6 +180,8 @@ jobs:
       - preview-database
     outputs:
       url: ${{ steps.deploy.outputs.url }}
+    env:
+      DATABASE_URL: ${{ needs.preview-database.outputs.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v3
 
@@ -215,9 +217,9 @@ jobs:
           PREVIEW_SHA=${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
 
           ENV_VARIABLES=$(cat .vercel/.env.preview.local)
-          SUB="$DATABASE_URL_KEY=\"$DATABASE_URL\""
+          SUB="$DATABASE_URL_KEY=\"${{ env.DATABASE_URL }}\""
 
-          if [[ "$ENV_VARIABLES" == *"$SUB"* ]]; then
+          if [[ "$ENV_VARIABLES" != *"$SUB"* ]]; then
             vercel env rm DATABASE_URL_$PREVIEW_SHA --yes --token=${{ secrets.VERCEL_TOKEN }} || true
             echo $DATABASE_URL | vercel env add DATABASE_URL_$PREVIEW_SHA preview --token=${{ secrets.VERCEL_TOKEN }}
           fi
