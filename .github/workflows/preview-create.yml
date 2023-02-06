@@ -17,19 +17,19 @@ jobs:
     name: Generate preview URL
     runs-on: ubuntu-latest
     outputs:
-      preview-sha: ${{ steps.generate-preview-hash.outputs.preview-sha }}
+      PREVIEW_SHA: ${{ steps.generate-preview-hash.outputs.PREVIEW_SHA }}
     steps:
       - name: Generate Branch Preview URL
         id: generate-preview-hash
         run: |
           BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-30)          
-          echo "preview-sha=$BRANCH_SHA" >> $GITHUB_OUTPUT
+          echo "PREVIEW_SHA=$BRANCH_SHA" >> $GITHUB_OUTPUT
 
   current-preview-url:
     name: Get current preview URL
     runs-on: ubuntu-latest
     outputs:
-      url: ${{ steps.preview-url.outputs.url }}
+      URL: ${{ steps.preview-url.outputs.URL }}
     steps:
       - name: Find preview deployment comment
         uses: peter-evans/find-comment@v2
@@ -46,7 +46,7 @@ jobs:
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ "$COMMENT_BODY" =~ $REGEX ]]; then
-              echo "url=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+              echo "URL=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           fi
 
       - name: Create or update preview environment comment
@@ -65,7 +65,7 @@ jobs:
     needs:
       - generate-preview-hash
     outputs:
-      uri: ${{ steps.connection-string.outputs.uri }}
+      URI: ${{ steps.connection-string.outputs.URI }}
     steps:
       - uses: actions/checkout@v3
 
@@ -100,14 +100,11 @@ jobs:
         id: connection-string
         run: |
           ENV_VARS=$(cat .vercel/.env.preview.local)
-          DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-hash.outputs.preview-sha }}
+          DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
           DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
           if [[ $ENV_VARS =~ $DB_REGEX ]]; then
-            echo "uri=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-            
-            
-            echo ${BASH_REMATCH[1]}            
+            echo "URI=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT         
           fi
 
   preview-database:
@@ -127,22 +124,24 @@ jobs:
         run: |
           FLY_APPS=$(flyctl apps list)          
 
-          if [[ $FLY_APPS =~ ${{ needs.generate-preview-hash.outputs.preview-sha }} ]]; then
+          if [[ $FLY_APPS =~ ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} ]]; then
               echo exists!
               echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT         
           fi
 
       - name: Delete database if needed
         id: delete-database
-        if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-uri.outputs.uri
+        if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-uri.outputs.URI
         run: |
-          flyctl apps destroy ${{ needs.generate-preview-hash.outputs.preview-sha }} --yes
+          flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
           echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
 
       - name: Create database
         id: create-database
-        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-uri.outputs.uri
+        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-uri.outputs.URI
         run: |
+          BRANCH_NAME=${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
+
           PG_CREATE_COMMAND="
               flyctl postgres create \
               --name $BRANCH_NAME \
@@ -213,7 +212,7 @@ jobs:
 
       - name: Replace Environment Variables
         run: |
-          PREVIEW_SHA=${{ needs.generate-preview-hash.outputs.preview-sha }}
+          PREVIEW_SHA=${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
 
           ENV_VARIABLES=$(cat .vercel/.env.preview.local)
           SUB="$DATABASE_URL_KEY=\"$DATABASE_URL\""
@@ -249,7 +248,7 @@ jobs:
         run: |
           vercel alias \
             ${{ needs.deploy-preview.outputs.url }} \
-            ${{ needs.generate-preview-hash.outputs.preview-sha }}.vercel.app \
+            ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}.vercel.app \
             --token=${{ secrets.VERCEL_TOKEN }}
 
   remove-old-preview:
@@ -288,7 +287,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           edit-mode: replace
           body: |
-            ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-hash.outputs.preview-sha }}.vercel.app)
+            ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}.vercel.app)
 
             <!-- __PREVIEW_DEPLOYMENT__ -->
             <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
