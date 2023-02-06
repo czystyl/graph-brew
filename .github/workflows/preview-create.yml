@@ -115,7 +115,7 @@ jobs:
       - current-preview-url
       - preview-database-url
     outputs:
-      DATABASE_URL: ${{ steps.create-database.output.DATABASE_URL }}
+      CONNECTION_STRING: ${{ steps.create-database.output.CONNECTION_STRING }}
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
@@ -171,9 +171,8 @@ jobs:
             --auto-confirm
 
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
-          echo $CONNECTION_STRING
 
-          echo "DATABASE_URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+          echo "CONNECTION_STRING=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
   deploy-preview:
     name: Deploy preview environment
@@ -217,10 +216,10 @@ jobs:
       - name: Update DATABASE_URL environment variable
         run: |
           echo "${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
-          echo "${{ needs.preview-database.outputs.DATABASE_URL }}"
+          echo "${{ needs.preview-database.outputs.CONNECTION_STRING }}"
           echo "${{ needs.preview-database-url.outputs.URL }}"
 
-          NEW_DATABASE_URL="${{ needs.preview-database.outputs.DATABASE_URL }}"
+          NEW_DATABASE_URL="${{ needs.preview-database.outputs.CONNECTION_STRING }}"
           EXISTING_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"         
 
           echo $NEW_DATABASE_URL
