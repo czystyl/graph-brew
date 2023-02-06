@@ -105,10 +105,7 @@ jobs:
 
           if [[ $ENV_VARS =~ $DB_REGEX ]]; then
             EXISTING_URL=$(echo ${BASH_REMATCH[1]} | base64)
-            
-            echo 123          
-            EXISTING_URL="${EXISTING_URL//$'\n'/''}"
-            echo $EXISTING_URL
+            EXISTING_URL="${EXISTING_URL//$'\n'/''}"            
 
             echo "URL=$EXISTING_URL" >> $GITHUB_OUTPUT
           fi
@@ -225,7 +222,7 @@ jobs:
       - name: Update DATABASE_URL environment variable
         run: |
           NEW_DATABASE_URL=$(echo "${{ needs.preview-database.outputs.URL }}" | base64 -d)
-          EXISTING_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"         
+          EXISTING_DATABASE_URL=$(echo "${{ needs.preview-database-url.outputs.URL }}" | base64 -d)
 
           if [[ $NEW_DATABASE_URL ]]; then
             DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
