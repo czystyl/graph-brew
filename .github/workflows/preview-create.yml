@@ -120,14 +120,19 @@ jobs:
         run: |
           FLY_APPS=$(flyctl apps list)          
 
+          echo $DATABASE_URL
+          echo ${{ env.DATABASE_URL }}
+
           if [[ $FLY_APPS =~ $PREVIEW_SHA ]]; then
-              echo "DATABASE_EXISTS=true" >> $GITHUB_ENV
+              echo exists!
+              echo "DATABASE_EXISTS=true" >> $GITHUB_ENV            
           fi
 
       - name: Delete database if needed
         id: delete-database
         if: env.DATABASE_EXISTS && !env.DATABASE_URL
         run: |
+          echo $PREVIEW_SHA
           flyctl apps destroy $PREVIEW_SHA --yes
           echo "DATABASE_DELETED=true" >> $GITHUB_ENV
 
