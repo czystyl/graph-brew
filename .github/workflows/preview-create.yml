@@ -248,6 +248,8 @@ jobs:
           echo 4 
           echo $CONNECTION_STRING | sed 's/ //g' | sed 's/\n//g' | base64 | sed 's/\n//g'
           echo 5
+          echo $CONNECTION_STRING | sed 's/ //g' | sed 's/\n//g' | base64 | sed 's/ //g'
+          echo 6
 
           TEST=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/ //g' | sed 's/\n//g' | base64 | sed 's/\n//g')
 
@@ -263,8 +265,6 @@ jobs:
 
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
-
-      - run: echo "${{ steps.create-database.outputs.URL }}"
 
   deploy-preview:
     name: Deploy preview environment
