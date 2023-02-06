@@ -248,11 +248,11 @@ jobs:
 
       - name: Run Migrations
         run: |
-          DATABASE_URL=${{ env.DATABASE_URL }}
+          # DATABASE_URL=${{ env.DATABASE_URL }}
 
-          echo ${{ env.DATABASE_URL }}
+          # echo ${{ env.DATABASE_URL }}
           echo 1
-          echo $DATABASE_URL     
+          # echo $DATABASE_URL     
 
           pnpx prisma migrate deploy
 
