@@ -241,11 +241,7 @@ jobs:
           # CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
-          echo "TEST=asdlkasldkalsdklaskdlaksdlaskldaklsd" >> $GITHUB_OUTPUT
-
-      - name: Test env
-        id: test-one
-        run: echo "TEST=asdlkasldkalsdklaskdlaksdlaskldaklsd" >> $GITHUB_OUTPUT
+          echo "TEST=3333333333333" >> $GITHUB_OUTPUT
 
       - run: echo ${{ steps.create-database.outputs.URL }}
 
