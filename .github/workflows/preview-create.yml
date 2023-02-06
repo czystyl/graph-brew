@@ -246,6 +246,8 @@ jobs:
         id: test-one
         run: echo "TEST=asdlkasldkalsdklaskdlaksdlaskldaklsd" >> $GITHUB_OUTPUT
 
+      - run: echo ${{ steps.create-database.outputs.URL }}
+
   deploy-preview:
     name: Deploy preview environment
     runs-on: ubuntu-latest
