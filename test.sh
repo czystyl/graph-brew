@@ -9,3 +9,12 @@ if [[ $vars =~ $DB_REGEX ]]; then
 else
     echo "No match"
 fi
+
+
+DB="0b6fe911b091a7c05124.fly.dev:5432\n"
+
+# remove new line using sed
+DB=$(echo $DB | sed 's/\\n//g')
+
+echo $DB
+
