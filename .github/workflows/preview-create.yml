@@ -242,9 +242,10 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
+          # CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+      - run: echo "URL=123" >> $GITHUB_OUTPUT
 
   deploy-preview:
     name: Deploy preview environment
