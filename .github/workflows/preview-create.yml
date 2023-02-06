@@ -240,11 +240,11 @@ jobs:
 
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\\n//g')
 
-          echo $CONNECTION_STRING
+          echo $CONNECTION_STRING | base64
 
           echo "TEST=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
-      - run: echo ${{ steps.create-database.outputs.URL }}
+      - run: echo "${{ steps.create-database.outputs.TEST }}""
 
   deploy-preview:
     name: Deploy preview environment
