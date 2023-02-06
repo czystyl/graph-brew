@@ -183,7 +183,7 @@ jobs:
       - current-preview-url
       - preview-database-url
     outputs:
-      URL: ${{ steps.create-database.outputs.URL }}
+      URL: ${{ steps.test-one.outputs.TEST }}
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
@@ -245,7 +245,8 @@ jobs:
           # CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
-      - run: echo "URL=123" >> $GITHUB_OUTPUT
+
+      - run: echo "TEST=123" >> $GITHUB_OUTPUT
 
   deploy-preview:
     name: Deploy preview environment
