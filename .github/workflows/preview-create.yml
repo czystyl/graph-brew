@@ -175,8 +175,6 @@ jobs:
           # https://github.com/orgs/community/discussions/26288
           CONNECTION_STRING="${CONNECTION_STRING//$'\n'/''}"
 
-          echo $CONNECTION_STRING
-
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
   deploy-preview:
@@ -231,7 +229,7 @@ jobs:
           echo $NEW_DATABASE_URL
           echo $EXISTING_DATABASE_URL
 
-          if[[ $NEW_DATABASE_URL ]]; then
+          if [[ $NEW_DATABASE_URL ]]; then
             DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
             
             vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
