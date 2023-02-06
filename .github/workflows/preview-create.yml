@@ -24,7 +24,7 @@ jobs:
         run: |
           BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-30)          
           echo "PREVIEW_SHA=$BRANCH_SHA" >> $GITHUB_OUTPUT
-      - run: TEST=123
+      - run: echo "TEST=123" >> $GITHUB_ENV
       - run: echo $TEST
   # current-preview-url:
   #   name: Get current preview URL
