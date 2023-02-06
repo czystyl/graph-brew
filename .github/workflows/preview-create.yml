@@ -231,7 +231,7 @@ jobs:
             echo $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
             echo "DATABASE_URL=$NEW_DATABASE_URL" >> $GITHUB_ENV
           elif [[ $EXISTING_DATABASE_URL ]]; then
-            echo "DATABASE_URL=$NEW_DATABASE_URL" >> $GITHUB_ENV
+            echo "DATABASE_URL=$EXISTING_DATABASE_URL" >> $GITHUB_ENV
           else
             echo "Ops, something went wrong!" && exit 1
           fi
@@ -242,7 +242,9 @@ jobs:
           pnpx prisma generate
 
       - name: Run Migrations
-        run: pnpx prisma migrate deploy
+        run: |
+          echo $DATABASE_URL 
+          pnpx prisma migrate deploy
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
