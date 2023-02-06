@@ -178,6 +178,16 @@ jobs:
 
           echo "CONNECTION_STRING=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
+  preview-database-test:
+    name: Deploy preview environment
+    runs-on: ubuntu-latest
+    outputs:
+      URL: ${{ steps.test-one.outputs.TEST }}
+    steps:
+      - name: Test env
+        id: test-one
+        run: echo "TEST=123" >> $GITHUB_OUTPUT
+
   deploy-preview:
     name: Deploy preview environment
     runs-on: ubuntu-latest
@@ -185,6 +195,7 @@ jobs:
       - generate-preview-hash
       - create-preview-database
       - preview-database-url
+      - preview-database-test
     outputs:
       URL: ${{ steps.deploy.outputs.URL }}
     steps:
@@ -219,8 +230,12 @@ jobs:
 
       - name: Update DATABASE_URL environment variable
         run: |
+
+
+
           echo "${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
           echo "${{ needs.create-preview-database.outputs.CONNECTION_STRING }}"
+          echo "${{ needs.preview-database-test.outputs.URL }}"
           echo "${{ needs.create-preview-database.outputs.TEST }}"
           echo "${{ needs.preview-database-url.outputs.URL }}"
 
