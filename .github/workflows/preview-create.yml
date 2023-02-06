@@ -205,20 +205,15 @@ jobs:
 
       - name: Replace Environment Variables
         run: |
-          vars=$(cat .vercel/.env.preview.local)
-
-          DB_REGEX='DATABASE_URL="(.*)"[[:space:]]'
-
           echo $DATABASE_URL
 
-          if [[ $vars =~ $DB_REGEX ]]; then
-            echo ${BASH_REMATCH[1]}
-            
-          else
-            echo "No match"
-          fi
+          ENV_VARIABLES=$(cat .vercel/.env.preview.local)
+          SUB="$DATABASE_URL_KEY=\"$DATABASE_URL\""
 
-          echo ${{ needs.preview-database.outputs.connection-string }} | vercel env add DATABASE_URL_$PREVIEW_SHA preview --token=${{ secrets.VERCEL_TOKEN }}
+          if [[ "$ENV_VARIABLES" == *"$SUB"* ]]; then
+            vercel env rm DATABASE_URL_$PREVIEW_SHA --yes
+            echo $DATABASE_URL | vercel env add DATABASE_URL_$PREVIEW_SHA preview --token=${{ secrets.VERCEL_TOKEN }}
+          fi
 
       - name: Build Project Artifacts
         run: |
@@ -227,10 +222,7 @@ jobs:
           pnpx prisma generate
 
       - name: Run Migrations
-        run: |
-          echo $DATABASE_URL
-
-          pnpx prisma migrate deploy
+        run: pnpx prisma migrate deploy
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
@@ -258,7 +250,6 @@ jobs:
     needs:
       - alias-preview
     steps:
-      - current-preview-url
       - name: Remove previous preview environment
         run: |
           if [ $PREVIEW_URL ]; then
