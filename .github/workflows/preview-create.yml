@@ -105,7 +105,7 @@ jobs:
 
           cat .vercel/.env.preview.local
 
-          DB_REGEX="$DATABASE_URL_KEY=\"(.*)\"[[:space:]]"
+          DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
           if [[ $vars =~ $DB_REGEX ]]; then
             echo "DATABASE_URL=${BASH_REMATCH[1]}" >> $GITHUB_ENV

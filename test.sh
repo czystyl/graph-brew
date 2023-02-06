@@ -4,7 +4,10 @@ DATABASE_URL_KEY=DATABASE_URL_123
 
 echo $DATABASE_URL_KEY
 
-DB_REGEX="$DATABASE_URL_KEY=\"(.*)\"[[:space:]]"
+DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
+
+# regexp to match value in quotes only to next quote 
+
 
 echo $DB_REGEX
 
