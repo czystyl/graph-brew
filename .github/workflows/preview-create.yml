@@ -179,7 +179,7 @@ jobs:
       - generate-preview-hash
       - preview-database
     outputs:
-      url: ${{ steps.deploy.outputs.url }}
+      URL: ${{ steps.deploy.outputs.URL }}
     env:
       DATABASE_URL: ${{ needs.preview-database.outputs.DATABASE_URL }}
     steps:
@@ -233,7 +233,7 @@ jobs:
       - name: Run Migrations
         run: |
           echo $DATABASE_URL
-          echo $env.DATABASE_URL
+          echo ${{env.DATABASE_URL}}
 
           pnpx prisma migrate deploy
 
@@ -241,7 +241,7 @@ jobs:
         id: deploy
         run: |
           DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "URL=${DOMAIN}" >> $GITHUB_OUTPUT
 
   alias-preview:
     name: Add environment URL alias
