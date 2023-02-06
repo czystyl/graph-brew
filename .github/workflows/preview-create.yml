@@ -244,7 +244,7 @@ jobs:
 
           echo "TEST=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
-      - run: echo "${{ steps.create-database.outputs.TEST }}""
+      - run: echo "${{ steps.create-database.outputs.TEST }}"
 
   deploy-preview:
     name: Deploy preview environment
