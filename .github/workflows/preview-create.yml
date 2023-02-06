@@ -239,12 +239,14 @@ jobs:
             --auto-confirm
 
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64)
+          TEST=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/ //g' | sed 's/\n//g' | base64 | sed 's/\n//g')
 
+          # https://github.com/orgs/community/discussions/26288
           CONNECTION_STRING="${CONNECTION_STRING//'%'/'%25'}"
           CONNECTION_STRING="${CONNECTION_STRING//$'\n'/'%0A'}"
           CONNECTION_STRING="${CONNECTION_STRING//$'\r'/'%0D'}"
 
-
+          echo $TEST
 
 
           echo $CONNECTION_STRING
