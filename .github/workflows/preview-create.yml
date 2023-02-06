@@ -241,8 +241,13 @@ jobs:
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
           echo 1:$CONNECTION_STRING
 
-          echo 2:$CONNECTION_STRING | base64
-          echo 3:$CONNECTION_STRING | sed 's/ //g' | sed 's/\n//g' | base64
+          echo 2
+          echo $CONNECTION_STRING | base64
+          echo 3
+          echo $CONNECTION_STRING | sed 's/ //g' | sed 's/\n//g' | base64
+          echo 4 
+          echo $CONNECTION_STRING | sed 's/ //g' | sed 's/\n//g' | base64 | sed 's/\n//g'
+          echo 5
 
           TEST=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/ //g' | sed 's/\n//g' | base64 | sed 's/\n//g')
 
