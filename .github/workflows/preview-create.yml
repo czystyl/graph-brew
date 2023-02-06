@@ -60,13 +60,11 @@ jobs:
             ## 🏗️ Building preview environment...
             <!-- __PREVIEW_DEPLOYMENT__ -->
 
-  get-database:
+  get-database-env:
     name: Get Database URL
     runs-on: ubuntu-latest
     needs:
       - generate-preview-url
-    outputs:
-      url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v3
 
@@ -99,48 +97,45 @@ jobs:
 
       - name: Replace Environment Variables
         run: |
-          vars=$(cat .vercel/.env.preview.local)
-
+          ENV_VARS=$(cat .vercel/.env.preview.local)
           DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-url.outputs.preview-hash }}
-
-          cat .vercel/.env.preview.local
-
           DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
-          if [[ $vars =~ $DB_REGEX ]]; then
+          if [[ $ENV_VARS =~ $DB_REGEX ]]; then
             echo "DATABASE_URL=${BASH_REMATCH[1]}" >> $GITHUB_ENV
             echo ${BASH_REMATCH[1]}
             vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }}
-          else
-            echo "No match"
           fi
 
-          echo $DATABASE_URL
+  preview-database:
+    runs-on: ubuntu-latest
+    needs:
+      - get-preview-state
+      - generate-preview-url
+    outputs:
+      connection-string: ${{ steps.encoded-connection-string.outputs.uri }}
+    env:
+      BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
 
-          echo 123v | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Check if Database exists
+        id: check-database
+        run: |
+          FLY_APPS=$(flyctl apps list)
+          PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
 
-  # preview-database:
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - get-preview-state
-  #     - generate-preview-url
-  #   outputs:
-  #     connection-string: ${{ steps.encoded-connection-string.outputs.uri }}
-  #   env:
-  #     BRANCH_NAME: ${{ needs.generate-preview-url.outputs.preview-hash }}
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: superfly/flyctl-actions/setup-flyctl@master
+          if [[ $FLY_APPS =~ $PREVIEW_HASH ]]; then
+              echo "database-exists=true" >> $GITHUB_OUTPUT
+          fi
 
-  #     - name: Check if Database exists
-  #       id: check-database
-  #       run: |
-  #         FLY_APPS=$(flyctl apps list)
-  #         PREVIEW_HASH=${{ needs.generate-preview-url.outputs.preview-hash }}
-
-  #         if [[ $FLY_APPS =~ $PREVIEW_HASH ]]; then
-  #             echo "database-exists=true" >> $GITHUB_OUTPUT
-  #         fi
+      - name: test1
+        if: env.DATABASE_URL
+        run: echo 123
+      - name: test1
+        if: always() && !env.DATABASE_URL
+        run: echo 123
 
   #     - name: Delete database if needed
   #       id: delete-database
@@ -169,9 +164,6 @@ jobs:
 
   #         if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
   #           INTERNAL_CONNECTION_STRING=${BASH_REMATCH[2]}
-  #         else
-  #           echo "OPS problem"
-  #           exit 1
   #         fi
 
   #         flyctl ips allocate-v4 --app $BRANCH_NAME
@@ -183,11 +175,7 @@ jobs:
   #           --image flyio/postgres:14 \
   #           --auto-confirm
 
-  #         # Github Actions adds space in the middle of encoded connection string so we have to remove it
-  #         # CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/ //g')
-
   #         CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
-
   #         echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
   #     - name: Set connection string
@@ -198,8 +186,7 @@ jobs:
   #         elif [[ "${{ steps.create-database.outputs.url }}" ]]; then
   #           echo "uri=${{ steps.create-database.outputs.url }}" >> $GITHUB_OUTPUT
   #         else
-  #           echo ERROOOORRRRR
-  #           exit 1
+  #           echo Something went wrong! && exit 1
   #         fi
 
   # deploy-preview:
