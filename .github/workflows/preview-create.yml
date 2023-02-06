@@ -105,9 +105,11 @@ jobs:
 
           if [[ $ENV_VARS =~ $DB_REGEX ]]; then
             EXISTING_URL=$(echo ${BASH_REMATCH[1]} | base64)
-            echo 123
-            echo $EXISTING_URL
             
+            echo 123          
+            EXISTING_URL="${EXISTING_URL//$'\n'/''}"
+            echo $EXISTING_URL
+
             echo "URL=$EXISTING_URL" >> $GITHUB_OUTPUT
           fi
 
@@ -174,7 +176,7 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/\n//g')
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64)
 
           # https://github.com/orgs/community/discussions/26288
           CONNECTION_STRING="${CONNECTION_STRING//$'\n'/''}"
