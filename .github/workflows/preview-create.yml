@@ -131,9 +131,6 @@ jobs:
               echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT
           fi
 
-      - id: test123
-        run: echo "TESTTT=321#1231231" >> $GITHUB_OUTPUT
-
       - name: Delete database if needed
         id: delete-database
         if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
@@ -181,9 +178,33 @@ jobs:
   preview-database-test:
     name: Deploy preview environment
     runs-on: ubuntu-latest
+    needs:
+      - generate-preview-hash
+      - current-preview-url
+      - preview-database-url
     outputs:
       URL: ${{ steps.test-one.outputs.TEST }}
     steps:
+      - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Check if Database exists
+        id: check-database
+        run: |
+          FLY_APPS=$(flyctl apps list)
+
+          if [[ $FLY_APPS =~ ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} ]]; then
+              echo exists!
+              echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Delete database if needed
+        id: delete-database
+        if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
+        run: |
+          flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
+          echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
+
       - name: Test env
         id: test-one
         run: echo "TEST=123" >> $GITHUB_OUTPUT
@@ -230,9 +251,6 @@ jobs:
 
       - name: Update DATABASE_URL environment variable
         run: |
-
-
-
           echo "${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
           echo "${{ needs.create-preview-database.outputs.CONNECTION_STRING }}"
           echo "${{ needs.preview-database-test.outputs.URL }}"
