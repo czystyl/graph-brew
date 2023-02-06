@@ -176,7 +176,7 @@ jobs:
           echo "CONNECTION_STRING=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
   preview-database-test:
-    name: Deploy preview environment
+    name: TEST
     runs-on: ubuntu-latest
     needs:
       - generate-preview-hash
@@ -214,9 +214,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - generate-preview-hash
-      - create-preview-database
-      - preview-database-url
       - preview-database-test
+      - preview-database-url
     outputs:
       URL: ${{ steps.deploy.outputs.URL }}
     steps:
@@ -252,12 +251,10 @@ jobs:
       - name: Update DATABASE_URL environment variable
         run: |
           echo "${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
-          echo "${{ needs.create-preview-database.outputs.CONNECTION_STRING }}"
-          echo "${{ needs.preview-database-test.outputs.URL }}"
-          echo "${{ needs.create-preview-database.outputs.TEST }}"
+          echo "${{ needs.preview-database-test.outputs.URL }}"                  
           echo "${{ needs.preview-database-url.outputs.URL }}"
 
-          NEW_DATABASE_URL="${{ needs.create-preview-database.outputs.CONNECTION_STRING }}"
+          NEW_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"
           EXISTING_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"         
 
           echo $NEW_DATABASE_URL
