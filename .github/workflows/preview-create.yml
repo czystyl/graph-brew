@@ -231,7 +231,11 @@ jobs:
           pnpx prisma generate
 
       - name: Run Migrations
-        run: pnpx prisma migrate deploy
+        run: |
+          echo $DATABASE_URL
+          echo $env.DATABASE_URL
+
+          pnpx prisma migrate deploy
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
