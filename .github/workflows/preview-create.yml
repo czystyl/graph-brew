@@ -205,10 +205,6 @@ jobs:
           flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
           echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
 
-      - name: Test env
-        id: test-one
-        run: echo "TEST=123" >> $GITHUB_OUTPUT
-
       - name: Create database
         id: create-database
         if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
@@ -246,7 +242,9 @@ jobs:
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
-      - run: echo "TEST=123" >> $GITHUB_OUTPUT
+      - name: Test env
+        id: test-one
+        run: echo "TEST=asdlkasldkalsdklaskdlaksdlaskldaklsd" >> $GITHUB_OUTPUT
 
   deploy-preview:
     name: Deploy preview environment
