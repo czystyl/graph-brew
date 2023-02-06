@@ -112,6 +112,7 @@ jobs:
     needs:
       - get-preview-state
       - generate-preview-url
+      - get-database-env
     outputs:
       connection-string: ${{ steps.encoded-connection-string.outputs.uri }}
     env:
@@ -133,6 +134,7 @@ jobs:
       - name: test1
         if: env.DATABASE_URL
         run: echo 123
+
       - name: test1
         if: always() && !env.DATABASE_URL
         run: echo 123
