@@ -104,8 +104,9 @@ jobs:
           DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
           if [[ $ENV_VARS =~ $DB_REGEX ]]; then
-            EXISTING_URL=$(echo ${BASH_REMATCH[1]} | base64)
-            EXISTING_URL="${EXISTING_URL//$'\n'/''}"            
+            EXISTING_URL=${BASH_REMATCH[1]} 
+            EXISTING_URL="${EXISTING_URL//$'\n'/''}"
+            EXISTING_URL=$(echo $EXISTING_URL | base64)
 
             echo "URL=$EXISTING_URL" >> $GITHUB_OUTPUT
           fi
