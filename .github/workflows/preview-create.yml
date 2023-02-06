@@ -107,73 +107,73 @@ jobs:
             echo "URL=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           fi
 
-  create-preview-database:
-    name: Create Preview Database
-    runs-on: ubuntu-latest
-    needs:
-      - generate-preview-hash
-      - current-preview-url
-      - preview-database-url
-    outputs:
-      CONNECTION_STRING: ${{ steps.create-database.output.CONNECTION_STRING }}
-      TEST: ${{ steps.test123.output.TESTTT }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+  # create-preview-database:
+  #   name: Create Preview Database
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - generate-preview-hash
+  #     - current-preview-url
+  #     - preview-database-url
+  #   outputs:
+  #     CONNECTION_STRING: ${{ steps.create-database.output.CONNECTION_STRING }}
+  #     TEST: ${{ steps.test123.output.TESTTT }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Check if Database exists
-        id: check-database
-        run: |
-          FLY_APPS=$(flyctl apps list)
+  #     - name: Check if Database exists
+  #       id: check-database
+  #       run: |
+  #         FLY_APPS=$(flyctl apps list)
 
-          if [[ $FLY_APPS =~ ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} ]]; then
-              echo exists!
-              echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT
-          fi
+  #         if [[ $FLY_APPS =~ ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} ]]; then
+  #             echo exists!
+  #             echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT
+  #         fi
 
-      - name: Delete database if needed
-        id: delete-database
-        if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
-        run: |
-          flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
-          echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
+  #     - name: Delete database if needed
+  #       id: delete-database
+  #       if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
+  #       run: |
+  #         flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
+  #         echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
 
-      - name: Create database
-        id: create-database
-        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
-        run: |
-          BRANCH_NAME=${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
+  #     - name: Create database
+  #       id: create-database
+  #       if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
+  #       run: |
+  #         BRANCH_NAME=${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
 
-          PG_CREATE_COMMAND="
-              flyctl postgres create \
-              --name $BRANCH_NAME \
-              --org product-brew \
-              --region waw \
-              --vm-size shared-cpu-1x - 256 \
-              --initial-cluster-size 1 \
-              --volume-size 1 \
-              --image-ref flyio/postgres:14
-            "
+  #         PG_CREATE_COMMAND="
+  #             flyctl postgres create \
+  #             --name $BRANCH_NAME \
+  #             --org product-brew \
+  #             --region waw \
+  #             --vm-size shared-cpu-1x - 256 \
+  #             --initial-cluster-size 1 \
+  #             --volume-size 1 \
+  #             --image-ref flyio/postgres:14
+  #           "
 
-          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
-          REGEX="(Connection string: )(.*)( Save)"
+  #         PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
+  #         REGEX="(Connection string: )(.*)( Save)"
 
-          if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
-            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[2]}
-          fi
+  #         if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
+  #           INTERNAL_CONNECTION_STRING=${BASH_REMATCH[2]}
+  #         fi
 
-          flyctl ips allocate-v4 --app $BRANCH_NAME
+  #         flyctl ips allocate-v4 --app $BRANCH_NAME
 
-          sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
+  #         sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
 
-          flyctl deploy \
-            --app $BRANCH_NAME \
-            --image flyio/postgres:14 \
-            --auto-confirm
+  #         flyctl deploy \
+  #           --app $BRANCH_NAME \
+  #           --image flyio/postgres:14 \
+  #           --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
+  #         CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
 
-          echo "CONNECTION_STRING=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+  #         echo "CONNECTION_STRING=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
   preview-database-test:
     name: TEST
