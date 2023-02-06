@@ -27,7 +27,7 @@ jobs:
           echo "preview-sha=$BRANCH_SHA" >> $GITHUB_OUTPUT
 
       - name: Delete database
-        run: flyctl apps destroy ${{ steps.generate-preview-url.outputs.preview-sha }} --yes
+        run: flyctl apps destroy $PREVIEW_SHA --yes
 
   remove-preview:
     name: Remove preview environment
