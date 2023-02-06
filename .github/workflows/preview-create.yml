@@ -24,279 +24,280 @@ jobs:
         run: |
           BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-30)          
           echo "PREVIEW_SHA=$BRANCH_SHA" >> $GITHUB_OUTPUT
+      - run: TEST=123
+      - run: echo $TEST
+  # current-preview-url:
+  #   name: Get current preview URL
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     URL: ${{ steps.preview-url.outputs.URL }}
+  #   steps:
+  #     - name: Find preview deployment comment
+  #       uses: peter-evans/find-comment@v2
+  #       if: success() && github.event.number
+  #       id: preview-comment
+  #       with:
+  #         issue-number: ${{ github.event.number }}
+  #         body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
 
-  current-preview-url:
-    name: Get current preview URL
-    runs-on: ubuntu-latest
-    outputs:
-      URL: ${{ steps.preview-url.outputs.URL }}
-    steps:
-      - name: Find preview deployment comment
-        uses: peter-evans/find-comment@v2
-        if: success() && github.event.number
-        id: preview-comment
-        with:
-          issue-number: ${{ github.event.number }}
-          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+  #     - name: Get current preview url
+  #       id: preview-url
+  #       run: |
+  #         REGEX="(__PREVIEW_URL: )(.*)( -->)"
+  #         COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
-      - name: Get current preview url
-        id: preview-url
-        run: |
-          REGEX="(__PREVIEW_URL: )(.*)( -->)"
-          COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
+  #         if [[ "$COMMENT_BODY" =~ $REGEX ]]; then
+  #             echo "URL=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+  #         fi
 
-          if [[ "$COMMENT_BODY" =~ $REGEX ]]; then
-              echo "URL=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-          fi
+  #     - name: Create or update preview environment comment
+  #       uses: peter-evans/create-or-update-comment@v2
+  #       with:
+  #         comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+  #         issue-number: ${{ github.event.pull_request.number }}
+  #         edit-mode: replace
+  #         body: |
+  #           ## 🏗️ Building preview environment...
+  #           <!-- __PREVIEW_DEPLOYMENT__ -->
 
-      - name: Create or update preview environment comment
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            ## 🏗️ Building preview environment...
-            <!-- __PREVIEW_DEPLOYMENT__ -->
+  # preview-database-uri:
+  #   name: Get database connection strong
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - generate-preview-hash
+  #   outputs:
+  #     URI: ${{ steps.connection-string.outputs.URI }}
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-  preview-database-uri:
-    name: Get database connection strong
-    runs-on: ubuntu-latest
-    needs:
-      - generate-preview-hash
-    outputs:
-      URI: ${{ steps.connection-string.outputs.URI }}
-    steps:
-      - uses: actions/checkout@v3
+  #     - uses: pnpm/action-setup@v2
+  #       name: Install pnpm
+  #       id: pnpm-install
+  #       with:
+  #         version: 7
+  #         run_install: false
 
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 7
-          run_install: false
+  #     - name: Get pnpm store directory
+  #       id: pnpm-cache
+  #       shell: bash
+  #       run: |
+  #         echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+  #     - uses: actions/cache@v3
+  #       name: Setup pnpm cache
+  #       with:
+  #         path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-pnpm-store-
 
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+  #     - name: Install Vercel CLI
+  #       run: pnpm add vercel@latest --global
 
-      - name: Install Vercel CLI
-        run: pnpm add vercel@latest --global
+  #     - name: Pull Vercel Preview  Environment Information
+  #       run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Pull Vercel Preview  Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+  #     - name: Get the connection string
+  #       id: connection-string
+  #       run: |
+  #         ENV_VARS=$(cat .vercel/.env.preview.local)
+  #         DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
+  #         DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
-      - name: Get the connection string
-        id: connection-string
-        run: |
-          ENV_VARS=$(cat .vercel/.env.preview.local)
-          DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
-          DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
+  #         if [[ $ENV_VARS =~ $DB_REGEX ]]; then
+  #           echo "URI=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+  #         fi
 
-          if [[ $ENV_VARS =~ $DB_REGEX ]]; then
-            echo "URI=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT         
-          fi
+  # preview-database:
+  #   name: Create Preview Database
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - generate-preview-hash
+  #     - current-preview-url
+  #     - preview-database-uri
+  #   outputs:
+  #     DATABASE_URL: ${{ steps.create-database.output.DATABASE_URL }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: superfly/flyctl-actions/setup-flyctl@master
 
-  preview-database:
-    name: Create Preview Database
-    runs-on: ubuntu-latest
-    needs:
-      - generate-preview-hash
-      - current-preview-url
-      - preview-database-uri
-    outputs:
-      DATABASE_URL: ${{ steps.create-database.output.DATABASE_URL }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+  #     - name: Check if Database exists
+  #       id: check-database
+  #       run: |
+  #         FLY_APPS=$(flyctl apps list)
 
-      - name: Check if Database exists
-        id: check-database
-        run: |
-          FLY_APPS=$(flyctl apps list)          
+  #         if [[ $FLY_APPS =~ ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} ]]; then
+  #             echo exists!
+  #             echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT
+  #         fi
 
-          if [[ $FLY_APPS =~ ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} ]]; then
-              echo exists!
-              echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT         
-          fi
+  #     - name: Delete database if needed
+  #       id: delete-database
+  #       if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-uri.outputs.URI
+  #       run: |
+  #         flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
+  #         echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
 
-      - name: Delete database if needed
-        id: delete-database
-        if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-uri.outputs.URI
-        run: |
-          flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
-          echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
+  #     - name: Create database
+  #       id: create-database
+  #       if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-uri.outputs.URI
+  #       run: |
+  #         BRANCH_NAME=${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
 
-      - name: Create database
-        id: create-database
-        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-uri.outputs.URI
-        run: |
-          BRANCH_NAME=${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
+  #         PG_CREATE_COMMAND="
+  #             flyctl postgres create \
+  #             --name $BRANCH_NAME \
+  #             --org product-brew \
+  #             --region waw \
+  #             --vm-size shared-cpu-1x - 256 \
+  #             --initial-cluster-size 1 \
+  #             --volume-size 1 \
+  #             --image-ref flyio/postgres:14
+  #           "
 
-          PG_CREATE_COMMAND="
-              flyctl postgres create \
-              --name $BRANCH_NAME \
-              --org product-brew \
-              --region waw \
-              --vm-size shared-cpu-1x - 256 \
-              --initial-cluster-size 1 \
-              --volume-size 1 \
-              --image-ref flyio/postgres:14
-            "
+  #         PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
+  #         REGEX="(Connection string: )(.*)( Save)"
 
-          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
-          REGEX="(Connection string: )(.*)( Save)"
+  #         if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
+  #           INTERNAL_CONNECTION_STRING=${BASH_REMATCH[2]}
+  #         fi
 
-          if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
-            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[2]}
-          fi
+  #         flyctl ips allocate-v4 --app $BRANCH_NAME
 
-          flyctl ips allocate-v4 --app $BRANCH_NAME
+  #         sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
 
-          sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
+  #         flyctl deploy \
+  #           --app $BRANCH_NAME \
+  #           --image flyio/postgres:14 \
+  #           --auto-confirm
 
-          flyctl deploy \
-            --app $BRANCH_NAME \
-            --image flyio/postgres:14 \
-            --auto-confirm
+  #         CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
+  #         echo "DATABASE_URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
-          echo "DATABASE_URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+  # deploy-preview:
+  #   name: Deploy preview environment
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - generate-preview-hash
+  #     - preview-database
+  #   outputs:
+  #     URL: ${{ steps.deploy.outputs.URL }}
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-  deploy-preview:
-    name: Deploy preview environment
-    runs-on: ubuntu-latest
-    needs:
-      - generate-preview-hash
-      - preview-database
-    outputs:
-      URL: ${{ steps.deploy.outputs.URL }}
-    steps:
-      - uses: actions/checkout@v3
+  #     - uses: pnpm/action-setup@v2
+  #       name: Install pnpm
+  #       id: pnpm-install
+  #       with:
+  #         version: 7
+  #         run_install: false
 
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 7
-          run_install: false
+  #     - name: Get pnpm store directory
+  #       id: pnpm-cache
+  #       shell: bash
+  #       run: |
+  #         echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+  #     - uses: actions/cache@v3
+  #       name: Setup pnpm cache
+  #       with:
+  #         path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-pnpm-store-
 
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+  #     - name: Install Vercel CLI
+  #       run: pnpm add vercel@latest --global
 
-      - name: Install Vercel CLI
-        run: pnpm add vercel@latest --global
+  #     - name: Pull Vercel Preview  Environment Information
+  #       run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Pull Vercel Preview  Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+  #     - name: Update DATABASE_URL environment
+  #       run: |
+  #         DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
+  #         DATABASE_URL="${{ needs.preview-database.outputs.DATABASE_URL }}"
 
-      - name: Update DATABASE_URL environment
-        run: |
-          DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
-          DATABASE_URL="${{ needs.preview-database.outputs.DATABASE_URL }}"
+  #         ENV_VARIABLES=$(cat .vercel/.env.preview.local)
+  #         UPDATED_DATABASE_URL="$DATABASE_URL_KEY=\"$DATABASE_URL\""
 
-          ENV_VARIABLES=$(cat .vercel/.env.preview.local)
-          UPDATED_DATABASE_URL="$DATABASE_URL_KEY=\"$DATABASE_URL\""
+  #         if [[ "$ENV_VARIABLES" != *"$UPDATED_DATABASE_URL"* ]]; then
+  #           vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+  #           echo $DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
+  #         fi
 
-          if [[ "$ENV_VARIABLES" != *"$UPDATED_DATABASE_URL"* ]]; then
-            vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
-            echo $DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
-          fi
+  #     - name: Pull Vercel Preview  Environment Information
+  #       run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Pull Vercel Preview  Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+  #     - name: Build Project Artifacts
+  #       run: |
+  #         vercel build --token=${{ secrets.VERCEL_TOKEN }}
+  #         pnpx prisma generate
 
-      - name: Build Project Artifacts
-        run: |
-          vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          pnpx prisma generate
+  #     - name: Run Migrations
+  #       run: |
+  #         source .vercel/.env.preview.local
+  #         echo $DATABASE_URL
 
-      - name: Run Migrations
-        run: |
-          source .vercel/.env.preview.local
-          echo $DATABASE_URL
+  #         pnpx prisma migrate deploy
 
-          pnpx prisma migrate deploy
+  #     - name: Deploy Project Artifacts to Vercel
+  #       id: deploy
+  #       run: |
+  #         DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+  #         echo "URL=${DOMAIN}" >> $GITHUB_OUTPUT
 
-      - name: Deploy Project Artifacts to Vercel
-        id: deploy
-        run: |
-          DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "URL=${DOMAIN}" >> $GITHUB_OUTPUT
+  # alias-preview:
+  #   name: Add environment URL alias
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - deploy-preview
+  #     - generate-preview-hash
+  #   steps:
+  #     - name: Alias current deployment
+  #       run: |
+  #         vercel alias \
+  #           ${{ needs.deploy-preview.outputs.url }} \
+  #           ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}.vercel.app \
+  #           --token=${{ secrets.VERCEL_TOKEN }}
 
-  alias-preview:
-    name: Add environment URL alias
-    runs-on: ubuntu-latest
-    needs:
-      - deploy-preview
-      - generate-preview-hash
-    steps:
-      - name: Alias current deployment
-        run: |
-          vercel alias \
-            ${{ needs.deploy-preview.outputs.url }} \
-            ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}.vercel.app \
-            --token=${{ secrets.VERCEL_TOKEN }}
+  # remove-old-preview:
+  #   name: Remove old environment
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - alias-preview
+  #   steps:
+  #     - name: Remove previous preview environment
+  #       run: |
+  #         if [ $PREVIEW_URL ]; then
+  #             vercel remove $PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
+  #         fi
 
-  remove-old-preview:
-    name: Remove old environment
-    runs-on: ubuntu-latest
-    needs:
-      - alias-preview
-    steps:
-      - name: Remove previous preview environment
-        run: |
-          if [ $PREVIEW_URL ]; then
-              vercel remove $PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}          
-          fi
+  # update-deployment-comment:
+  #   name: Update preview state
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - alias-preview
+  #     - generate-preview-hash
+  #     - preview-database
+  #     - deploy-preview
+  #   steps:
+  #     - name: Find preview environment comment to update
+  #       uses: peter-evans/find-comment@v2
+  #       if: success() && github.event.number
+  #       id: preview-comment
+  #       with:
+  #         issue-number: ${{ github.event.number }}
+  #         body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
 
-  update-deployment-comment:
-    name: Update preview state
-    runs-on: ubuntu-latest
-    needs:
-      - alias-preview
-      - generate-preview-hash
-      - preview-database
-      - deploy-preview
-    steps:
-      - name: Find preview environment comment to update
-        uses: peter-evans/find-comment@v2
-        if: success() && github.event.number
-        id: preview-comment
-        with:
-          issue-number: ${{ github.event.number }}
-          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+  #     - name: Create or update preview link comment
+  #       uses: peter-evans/create-or-update-comment@v2
+  #       with:
+  #         comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+  #         issue-number: ${{ github.event.pull_request.number }}
+  #         edit-mode: replace
+  #         body: |
+  #           ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}.vercel.app)
 
-      - name: Create or update preview link comment
-        uses: peter-evans/create-or-update-comment@v2
-        with:
-          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          edit-mode: replace
-          body: |
-            ## [🚀 Your preview environment is ready!](https://${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}.vercel.app)
-
-            <!-- __PREVIEW_DEPLOYMENT__ -->
-            <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
-            <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
+  #           <!-- __PREVIEW_DEPLOYMENT__ -->
+  #           <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
+  #           <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
