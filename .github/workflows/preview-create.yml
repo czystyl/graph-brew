@@ -183,7 +183,7 @@ jobs:
       - current-preview-url
       - preview-database-url
     outputs:
-      URL: ${{ steps.create-database.outputs.TEST }}
+      URL: ${{ steps.create-database.outputs.URL }}
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
@@ -238,13 +238,11 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\\n//g')
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\\n//g' | base64)
 
-          echo $CONNECTION_STRING | base64
+          echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
-          echo "TEST=$CONNECTION_STRING" >> $GITHUB_OUTPUT
-
-      - run: echo "${{ steps.create-database.outputs.TEST }}"
+      - run: echo "${{ steps.create-database.outputs.URL }}"
 
   deploy-preview:
     name: Deploy preview environment
@@ -291,7 +289,7 @@ jobs:
           echo "${{ needs.preview-database-test.outputs.URL }}"                  
           echo "${{ needs.preview-database-url.outputs.URL }}"
 
-          NEW_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"
+          NEW_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}" | base64 -d
           EXISTING_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"         
 
           echo $NEW_DATABASE_URL
