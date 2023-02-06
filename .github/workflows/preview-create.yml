@@ -238,10 +238,11 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          # CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\\n//g')
 
-          echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
-          echo "TEST=3333333333333" >> $GITHUB_OUTPUT
+          echo $CONNECTION_STRING
+
+          echo "TEST=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
       - run: echo ${{ steps.create-database.outputs.URL }}
 
