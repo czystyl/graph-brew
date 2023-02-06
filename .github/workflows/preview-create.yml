@@ -104,7 +104,7 @@ jobs:
           DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
           if [[ $ENV_VARS =~ $DB_REGEX ]]; then
-            EXISTING_URL=$(echo ${BASH_REMATCH[1]} | base64)
+            EXISTING_URL=$(echo ${BASH_REMATCH[1]} | base64)            
             
             echo "URL=$EXISTING_URL" >> $GITHUB_OUTPUT
           fi
@@ -157,11 +157,24 @@ jobs:
             "
 
           PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND)
-          REGEX="(Connection string: )(.*)( Save)"
 
-          if [[ $(echo $PG_CREATE_OUTPUT) =~ $REGEX ]]; then
-            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[2]}
+          echo 1
+          echo $PG_CREATE_OUTPUT
+          echo 2
+          TEST2=$(echo $PG_CREATE_OUTPUT |  tr '\n' ' ' | sed "s/ //g")
+          echo $TEST
+          echo 3
+
+
+
+          PG_CREATE_OUTPUT="${PG_CREATE_OUTPUT//[$'\t\r\n ']}"
+          REGEX="Connection string: (.*) Save"
+
+          if [[ $(echo $TEST) =~ $REGEX ]]; then
+            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}
           fi
+
+          echo $INTERNAL_CONNECTION_STRING
 
           flyctl ips allocate-v4 --app $BRANCH_NAME
 
@@ -173,6 +186,8 @@ jobs:
             --auto-confirm
 
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64)
+
+          echo $CONNECTION_STRING
 
           # https://github.com/orgs/community/discussions/26288
           CONNECTION_STRING="${CONNECTION_STRING//$'\n'/''}"
@@ -225,9 +240,10 @@ jobs:
 
           if [[ $NEW_DATABASE_URL ]]; then
             DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
-            
+
             vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
             echo $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
+
             echo "DATABASE_URL=$NEW_DATABASE_URL" >> $GITHUB_ENV
           elif [[ $EXISTING_DATABASE_URL ]]; then
             echo "DATABASE_URL=$EXISTING_DATABASE_URL" >> $GITHUB_ENV
