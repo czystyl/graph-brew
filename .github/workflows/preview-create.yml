@@ -238,13 +238,12 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\ //g' | base64)
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/\ //g')
 
           echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g"
           echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64
-          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\ //g'
+          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\n\ //g'
           echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/\ //g'
-
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
