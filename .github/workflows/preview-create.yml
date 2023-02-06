@@ -238,7 +238,13 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\\n//g' | base64)
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\ //g' | base64)
+
+          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g"
+          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64
+          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/\ //g'
+          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/\ //g'
+
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
@@ -295,7 +301,7 @@ jobs:
           echo $NEW_DATABASE_URL
           echo $EXISTING_DATABASE_URL
 
-          if[[ $NEW_DATABASE_URL]]; then
+          if[[ $NEW_DATABASE_URL ]]; then
             DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
             
             vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
