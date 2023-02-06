@@ -216,6 +216,10 @@ jobs:
 
       - name: Update DATABASE_URL environment variable
         run: |
+          echo "${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
+          echo "${{ needs.preview-database.outputs.URL }}"
+          echo "${{ needs.preview-database-url.outputs.URL }}"
+
           NEW_DATABASE_URL="${{ needs.preview-database.outputs.URL }}"
           EXISTING_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"         
 
@@ -228,7 +232,7 @@ jobs:
             vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
             echo $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
             echo "DATABASE_URL=$NEW_DATABASE_URL" >> $GITHUB_ENV
-          efif [[ $EXISTING_DATABASE_URL ]]; then
+          elif [[ $EXISTING_DATABASE_URL ]]; then
             echo "DATABASE_URL=$NEW_DATABASE_URL" >> $GITHUB_ENV
           else
             echo ops && exit 1
