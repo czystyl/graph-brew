@@ -238,31 +238,8 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
-          echo 1:$CONNECTION_STRING
-
-          echo 2
-          echo $CONNECTION_STRING | base64
-          echo 3
-          echo $CONNECTION_STRING | sed 's/ //g' | sed 's/\n//g' | base64
-          echo 4 
-          echo $CONNECTION_STRING | sed 's/ //g' | sed 's/\n//g' | base64 | sed 's/\n//g'
-          echo 5
-          echo $CONNECTION_STRING | sed 's/ //g' | sed 's/\n//g' | base64 | sed 's/ //g'
-          echo 6
-
-          TEST=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | sed 's/ //g' | sed 's/\n//g' | base64 | sed 's/\n//g')
-
-          # https://github.com/orgs/community/discussions/26288
-          CONNECTION_STRING="${CONNECTION_STRING//'%'/'%25'}"
-          CONNECTION_STRING="${CONNECTION_STRING//$'\n'/'%0A'}"
-          CONNECTION_STRING="${CONNECTION_STRING//$'\r'/'%0D'}"
-
-          echo $TEST
-
-
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | | sed 's/ //g')
           echo $CONNECTION_STRING
-
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
@@ -312,6 +289,7 @@ jobs:
           echo "${{ needs.preview-database-url.outputs.URL }}"
 
           NEW_DATABASE_URL=$(echo "${{ needs.preview-database-test.outputs.URL }}" | base64 -d)
+          echo $NEW_DATABASE_URL
           EXISTING_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"         
 
           echo $NEW_DATABASE_URL
