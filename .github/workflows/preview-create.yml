@@ -171,6 +171,7 @@ jobs:
             --auto-confirm
 
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g")
+          echo $CONNECTION_STRING
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
@@ -213,10 +214,10 @@ jobs:
       - name: Pull Vercel Preview  Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Update DATABASE_URL environment
+      - name: Update DATABASE_URL environment variable
         run: |
           NEW_DATABASE_URL="${{ needs.preview-database.outputs.URL }}"
-          EXISTING_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}l          
+          EXISTING_DATABASE_URL="${{ needs.preview-database-url.outputs.URL }}"         
 
           echo $NEW_DATABASE_URL
           echo $EXISTING_DATABASE_URL
@@ -293,7 +294,6 @@ jobs:
     needs:
       - alias-preview
       - generate-preview-hash
-      - preview-database
       - deploy-preview
     steps:
       - name: Find preview environment comment to update
@@ -315,4 +315,3 @@ jobs:
 
             <!-- __PREVIEW_DEPLOYMENT__ -->
             <!-- __PREVIEW_URL: ${{ needs.deploy-preview.outputs.url }} -->
-            <!-- __DATABASE_CONNECTION_STRING: ${{ needs.preview-database.outputs.connection-string }} -->
