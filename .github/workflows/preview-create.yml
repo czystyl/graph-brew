@@ -26,7 +26,7 @@ jobs:
           echo "PREVIEW_SHA=$BRANCH_SHA" >> $GITHUB_OUTPUT
 
   current-preview-url:
-    name: Get current preview URL
+    name: Check current preview URL
     runs-on: ubuntu-latest
     outputs:
       URL: ${{ steps.preview-url.outputs.URL }}
@@ -42,12 +42,14 @@ jobs:
       - name: Get current preview url
         id: preview-url
         run: |
-          REGEX="(__PREVIEW_URL: )(.*)( -->)"
+          REGEX="__PREVIEW_URL: (.*) -->"
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ "$COMMENT_BODY" =~ $REGEX ]]; then
               echo "URL=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           fi
+
+          echo ${BASH_REMATCH[1]}
 
       - name: Create or update preview environment comment
         uses: peter-evans/create-or-update-comment@v2
@@ -119,7 +121,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - generate-preview-hash
-      - current-preview-url
       - preview-database-url
     outputs:
       URL: ${{ steps.create-database.outputs.URL }}
@@ -175,9 +176,11 @@ jobs:
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
       - name: Assign static IP
+        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
         run: flyctl ips allocate-v4 --app $BRANCH_NAME
 
       - name: Deploy Database update
+        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
         run: |
           sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
 
@@ -259,7 +262,7 @@ jobs:
           echo "URL=${DOMAIN}" >> $GITHUB_OUTPUT
 
   alias-preview:
-    name: Add environment URL alias
+    name: Assign preview domain
     runs-on: ubuntu-latest
     needs:
       - deploy-preview
@@ -273,7 +276,7 @@ jobs:
             --token=${{ secrets.VERCEL_TOKEN }}
 
   remove-old-preview:
-    name: Remove old environment
+    name: Destroy previous preview
     runs-on: ubuntu-latest
     needs:
       - alias-preview
@@ -285,7 +288,7 @@ jobs:
           fi
 
   update-deployment-comment:
-    name: Update preview state
+    name: Update PR comment
     runs-on: ubuntu-latest
     needs:
       - alias-preview
