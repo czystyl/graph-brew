@@ -242,7 +242,7 @@ jobs:
       - name: Update database env
         run: |
           sed -i "s/env(\"DATABASE_URL\")/env(\"$DATABASE_URL_KEY\")/g" prisma/schema.prisma
-          source prisma/schema.prisma
+          source .vercel/.env.preview.local
 
       - name: Build Project Artifacts
         run: |
