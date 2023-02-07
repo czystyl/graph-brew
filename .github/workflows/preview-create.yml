@@ -187,10 +187,10 @@ jobs:
             --image flyio/postgres:14 \
             --auto-confirm
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed 's/ //g' |  tr '\n' ' ')
+          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64)
 
           # https://github.com/orgs/community/discussions/26288
-          # CONNECTION_STRING="${CONNECTION_STRING//$'\n'/''}"
+          CONNECTION_STRING="${CONNECTION_STRING//$'\n'/''}"
 
           echo $CONNECTION_STRING  
 
