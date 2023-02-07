@@ -104,24 +104,23 @@ jobs:
           DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
           if [[ $ENV_VARS =~ $DB_REGEX ]]; then
-
-            echo ${BASH_REMATCH[1]}
-            echo ${BASH_REMATCH[1]} | base64
-            echo ${BASH_REMATCH[1]} | base64 | tr '\n' ' '
-            echo ${BASH_REMATCH[1]} | base64 | tr '\n' ' ' | sed "s/ //g"
-
             EXISTING_URL=$(echo -n ${BASH_REMATCH[1]} | base64 | tr '\n' ' ' | sed "s/ //g")
+
             echo "URL=$EXISTING_URL" >> $GITHUB_OUTPUT
           fi
 
-  check-current-database:
-    name: Check if Database exists
+  preview-database:
+    name: Preview database
     runs-on: ubuntu-latest
     needs:
       - generate-preview-hash
+      - preview-database-url
     outputs:
-      DATABASE_EXISTS: ${{ steps.check-database.outputs.DATABASE_EXISTS }}
+      URL: ${{ steps.create-database.outputs.URL }}
+    env:
+      BRANCH_NAME: ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
     steps:
+      - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Check if Database exists
@@ -133,46 +132,17 @@ jobs:
               echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT
           fi
 
-  delete-preview-database:
-    name: Delete database without credentials
-    runs-on: ubuntu-latest
-    outputs:
-      DATABASE_DELETED: ${{ steps.delete-database.outputs.DATABASE_DELETED }}
-    needs:
-      - generate-preview-hash
-      - check-current-database
-      - preview-database-url
-    if: needs.check-current-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
-    steps:
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-
-      - name: Delete database
+      - name: Delete database if needed
         id: delete-database
-        if: needs.check-current-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
+        if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
         run: |
           flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
 
           echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
 
-  preview-database:
-    name: Preview database
-    runs-on: ubuntu-latest
-    needs:
-      - generate-preview-hash
-      - preview-database-url
-      - check-current-database
-      - delete-preview-database
-    outputs:
-      URL: ${{ steps.create-database.outputs.URL }}
-    env:
-      BRANCH_NAME: ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-
       - name: Create database
         id: create-database
-        if: needs.delete-preview-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
+        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl || !steps.check-database.outputs.DATABASE_EXISTS
         run: |
           PG_CREATE_COMMAND="
               flyctl postgres create \
@@ -185,7 +155,7 @@ jobs:
               --image-ref flyio/postgres:14
             "
 
-          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND | tr '\n' ' ' | sed "s/ //g")          
+          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND | tr '\n' ' ' | sed "s/ //g")
           REGEX="Connectionstring:(.*)Save"
 
           if [[ $PG_CREATE_OUTPUT =~ $REGEX ]]; then
