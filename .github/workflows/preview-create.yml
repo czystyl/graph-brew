@@ -161,8 +161,8 @@ jobs:
           echo 1
           echo $PG_CREATE_OUTPUT
           echo 2
-          TEST=$(echo $PG_CREATE_OUTPUT |  tr '\n' ' ' | sed "s/ //g")
-          echo $TEST
+          TEST1=$(echo $PG_CREATE_OUTPUT |  tr '\n' ' ' | sed "s/ //g")
+          echo $TEST1
           echo 3
 
 
@@ -170,7 +170,7 @@ jobs:
           PG_CREATE_OUTPUT="${PG_CREATE_OUTPUT//[$'\t\r\n ']}"
           REGEX="Connectionstring:(.*)Save"
 
-          if [[ $TEST =~ $REGEX ]]; then
+          if [[ $TEST1 =~ $REGEX ]]; then
             INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}
           else
             echo Ops && exit 1
@@ -192,6 +192,8 @@ jobs:
           # https://github.com/orgs/community/discussions/26288
           CONNECTION_STRING="${CONNECTION_STRING//$'\n'/''}"
 
+          test=$(echo $CONNECTION_STRING |  tr '\n' ' ' | sed "s/ //g")
+          echo $test
           echo $CONNECTION_STRING  
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
