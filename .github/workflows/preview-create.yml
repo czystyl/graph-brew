@@ -100,6 +100,7 @@ jobs:
         id: connection-string
         run: |
           ENV_VARS=$(cat .vercel/.env.preview.local)
+
           DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
           DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
@@ -232,9 +233,9 @@ jobs:
             vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
             echo -n $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
 
-            echo "DATABASE_URL=$NEW_DATABASE_URL" >> $GITHUB_ENV
+            echo "$DATABASE_URL_KEY=$NEW_DATABASE_URL" >> $GITHUB_ENV
           elif [[ $EXISTING_DATABASE_URL ]]; then
-            echo "DATABASE_URL=$EXISTING_DATABASE_URL" >> $GITHUB_ENV
+            echo "$DATABASE_URL_KEY=$EXISTING_DATABASE_URL" >> $GITHUB_ENV
           else
             echo "Ops, something went wrong!" && exit 1
           fi
@@ -245,18 +246,18 @@ jobs:
           source .vercel/.env.preview.local
 
       - name: Build Project Artifacts
-        run: |
-          vercel build --token=${{ secrets.VERCEL_TOKEN }}
-          pnpx prisma generate
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Run Migrations
+      - name: Generate Prisma client
+        run: pnpx prisma generate
+
+      - name: Run migrations
         run: pnpx prisma migrate deploy
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
         run: |
           DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-
           echo "URL=${DOMAIN}" >> $GITHUB_OUTPUT
 
   alias-preview:
