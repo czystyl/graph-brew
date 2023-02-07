@@ -168,7 +168,7 @@ jobs:
 
 
           PG_CREATE_OUTPUT="${PG_CREATE_OUTPUT//[$'\t\r\n ']}"
-          REGEX="Connectionstring: (.*) Save"
+          REGEX="Connectionstring:(.*)Save"
 
           if [[ $TEST =~ $REGEX ]]; then
             INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}
