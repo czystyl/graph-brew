@@ -242,7 +242,7 @@ jobs:
           cat prisma/schema.prisma
           echo $DATABASE_URL_KEY
 
-          sed -i "s/env("DATABASE_URL")/env(\"$DATABASE_URL_KEY\")/g" prisma/schema.prisma
+          sed -i "s/env(\"DATABASE_URL\")/env(\"$DATABASE_URL_KEY\")/g" prisma/schema.prisma
 
           cat prisma/schema.prisma
 
