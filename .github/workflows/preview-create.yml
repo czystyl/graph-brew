@@ -103,6 +103,8 @@ jobs:
           DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
           DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
+          echo $ENV_VARS
+
           if [[ $ENV_VARS =~ $DB_REGEX ]]; then
             EXISTING_URL=$(echo ${BASH_REMATCH[1]} | base64)            
             
