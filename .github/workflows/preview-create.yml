@@ -239,6 +239,8 @@ jobs:
             echo "Ops, something went wrong!" && exit 1
           fi
 
+          sed -i~ "s|DATABASE_URL|$DATABASE_URL_KEY|g" prisma/schema.prisma
+
       - name: Build Project Artifacts
         run: |
           vercel build --token=${{ secrets.VERCEL_TOKEN }}

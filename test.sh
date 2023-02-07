@@ -1,6 +1,2 @@
-# vercel env rm elo preview --yes
-vercel env add ELO_MELO preview < test.txt
+# replace DATABASE_URL in file prisma/schema.prisma with DATABASE_URL_TEST
 
-vercel pull --yes --environment=preview
-
-cat .vercel/.env.preview.local
