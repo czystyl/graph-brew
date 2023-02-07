@@ -133,6 +133,27 @@ jobs:
               echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT
           fi
 
+  delete-preview-database:
+    name: Delete database without credentials
+    runs-on: ubuntu-latest
+    outputs:
+      DATABASE_DELETED: ${{ steps.delete-database.outputs.DATABASE_DELETED }}
+    needs:
+      - generate-preview-hash
+      - check-current-database
+      - preview-database-url
+    if: needs.check-current-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Delete database
+        id: delete-database
+        if: needs.check-current-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
+        run: |
+          flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
+
+          echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
+
   preview-database:
     name: Preview database
     runs-on: ubuntu-latest
@@ -140,6 +161,7 @@ jobs:
       - generate-preview-hash
       - preview-database-url
       - check-current-database
+      - delete-preview-database
     outputs:
       URL: ${{ steps.create-database.outputs.URL }}
     env:
@@ -148,26 +170,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      # - name: Check if Database exists
-      #   id: check-database
-      #   run: |
-      #     FLY_APPS=$(flyctl apps list)
-
-      #     if [[ $FLY_APPS =~ ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} ]]; then
-      #         echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT
-      #     fi
-
-      - name: Delete database if needed
-        id: delete-database
-        if: needs.check-current-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
-        run: |
-          flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
-
-          echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
-
       - name: Create database
         id: create-database
-        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
+        if: needs.delete-preview-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
         run: |
           PG_CREATE_COMMAND="
               flyctl postgres create \
