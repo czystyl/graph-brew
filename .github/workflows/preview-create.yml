@@ -161,7 +161,7 @@ jobs:
           echo 1
           echo $PG_CREATE_OUTPUT
           echo 2
-          TEST2=$(echo $PG_CREATE_OUTPUT |  tr '\n' ' ' | sed "s/ //g")
+          TEST=$(echo $PG_CREATE_OUTPUT |  tr '\n' ' ' | sed "s/ //g")
           echo $TEST
           echo 3
 
@@ -170,7 +170,7 @@ jobs:
           PG_CREATE_OUTPUT="${PG_CREATE_OUTPUT//[$'\t\r\n ']}"
           REGEX="Connection string: (.*) Save"
 
-          if [[ $(echo $TEST) =~ $REGEX ]]; then
+          if [[ $TEST =~ $REGEX ]]; then
             INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}
           fi
 
