@@ -188,13 +188,10 @@ jobs:
             --auto-confirm
 
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64)
+          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 |  tr '\n' ' ' | sed "s/ //g"
 
           # https://github.com/orgs/community/discussions/26288
-          CONNECTION_STRING="${CONNECTION_STRING//$'\n'/''}"
-
-          test=$(echo $CONNECTION_STRING |  tr '\n' ' ' | sed "s/ //g")
-          echo $test
-          echo $CONNECTION_STRING  
+          CONNECTION_STRING=$(echo $CONNECTION_STRING | tr '\n' ' ' | sed "s/ //g")
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
