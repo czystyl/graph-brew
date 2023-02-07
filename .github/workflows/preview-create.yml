@@ -223,12 +223,12 @@ jobs:
 
       - name: Update DATABASE_URL environment variable
         run: |
+          DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
+
           NEW_DATABASE_URL=$(echo "${{ needs.preview-database.outputs.URL }}" | base64 -d)
           EXISTING_DATABASE_URL=$(echo "${{ needs.preview-database-url.outputs.URL }}" | base64 -d)
 
           if [[ $NEW_DATABASE_URL ]]; then
-            DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
-
             vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
             echo -n $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
 
@@ -240,8 +240,9 @@ jobs:
           fi
 
           cat prisma/schema.prisma
+          echo 1
           echo $DATABASE_URL_KEY
-
+          echo 2
           sed -i "s/env(\"DATABASE_URL\")/env(\"$DATABASE_URL_KEY\")/g" prisma/schema.prisma
 
           cat prisma/schema.prisma
