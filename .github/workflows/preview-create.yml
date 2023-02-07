@@ -119,8 +119,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - generate-preview-hash
-      - preview-database
-      - preview-database-url
     outputs:
       DATABASE_EXISTS: ${{ steps.check-database.outputs.DATABASE_EXISTS }}
     steps:
