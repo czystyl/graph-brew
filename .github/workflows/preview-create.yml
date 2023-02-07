@@ -104,7 +104,13 @@ jobs:
           DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
           if [[ $ENV_VARS =~ $DB_REGEX ]]; then
-            EXISTING_URL=$(echo -n ${BASH_REMATCH[1]} | base64)
+
+            echo ${BASH_REMATCH[1]}
+            echo ${BASH_REMATCH[1]} | base64
+            echo ${BASH_REMATCH[1]} | base64 | tr '\n' ' '
+            echo ${BASH_REMATCH[1]} | base64 | tr '\n' ' ' | sed "s/ //g"
+
+            EXISTING_URL=$(echo -n ${BASH_REMATCH[1]} | base64 | tr '\n' ' ' | sed "s/ //g")
             echo "URL=$EXISTING_URL" >> $GITHUB_OUTPUT
           fi
 
@@ -165,8 +171,6 @@ jobs:
           fi
 
           CONNECTION_STRING=$(echo -n $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | tr '\n' ' ' | sed "s/ //g")
-
-          echo -n $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed "s/ //g"
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
