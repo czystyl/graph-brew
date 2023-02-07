@@ -191,6 +191,8 @@ jobs:
       - preview-database-url
     outputs:
       URL: ${{ steps.deploy.outputs.URL }}
+    env:
+      DATABASE_URL_KEY: "DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
     steps:
       - uses: actions/checkout@v3
 
@@ -223,8 +225,6 @@ jobs:
 
       - name: Update DATABASE_URL environment variable
         run: |
-          DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
-
           NEW_DATABASE_URL=$(echo "${{ needs.preview-database.outputs.URL }}" | base64 -d)
           EXISTING_DATABASE_URL=$(echo "${{ needs.preview-database-url.outputs.URL }}" | base64 -d)
 
@@ -239,13 +239,10 @@ jobs:
             echo "Ops, something went wrong!" && exit 1
           fi
 
-          cat prisma/schema.prisma
-          echo 1
-          echo $DATABASE_URL_KEY
-          echo 2
+      - name: Update database env
+        run: |
           sed -i "s/env(\"DATABASE_URL\")/env(\"$DATABASE_URL_KEY\")/g" prisma/schema.prisma
-
-          cat prisma/schema.prisma
+          source prisma/schema.prisma
 
       - name: Build Project Artifacts
         run: |
