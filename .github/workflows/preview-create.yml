@@ -156,9 +156,7 @@ jobs:
               --image-ref flyio/postgres:14
             "
 
-          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND | tr '\n' ' ' | sed "s/ //g")
-          echo $PG_CREATE_OUTPUT
-          # PG_CREATE_OUTPUT=$(echo $PG_CREATE_OUTPUT | tr '\n' ' ' | sed "s/ //g")
+          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND | tr '\n' ' ' | sed "s/ //g")          
           REGEX="Connectionstring:(.*)Save"
 
           if [[ $PG_CREATE_OUTPUT =~ $REGEX ]]; then
@@ -167,22 +165,7 @@ jobs:
             echo Ops && exit 1
           fi
 
-          echo 0
-          echo $INTERNAL_CONNECTION_STRING
-          echo 1
-          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g"
-          echo 2
-          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64
-          echo 3
-          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | tr '\n' ' '
-          echo 4
-          echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | tr '\n' ' ' | sed "s/ //g"
-
           CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | tr '\n' ' ' | sed "s/ //g")
-
-          echo $CONNECTION_STRING
-
-          exit 1
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
