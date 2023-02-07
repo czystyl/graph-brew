@@ -3,10 +3,11 @@ PG_CREATE_OUTPUT="Creating postgres cluster in organization product-brew Creatin
           TEST=$(echo $PG_CREATE_OUTPUT |  tr '\n' ' ' | sed "s/ //g")
 
 # PG_CREATE_OUTPUT="${PG_CREATE_OUTPUT//[$'\t\r\n ']}"
-REGEX="Connection string: (.*) Save"
+REGEX="Connectionstring:(.*)Save"
 
 if [[ $TEST =~ $REGEX ]]; then
 INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}
 fi
 
 echo $INTERNAL_CONNECTION_STRING
+echo 9
