@@ -239,7 +239,11 @@ jobs:
             echo "Ops, something went wrong!" && exit 1
           fi
 
-          sed -i "s|DATABASE_URL|$DATABASE_URL_KEY|g" prisma/schema.prisma
+          cat prisma/schema.prisma
+          echo $DATABASE_URL_KEY
+
+          sed -i "s/env("DATABASE_URL")/env(\"$DATABASE_URL_KEY\")/g" prisma/schema.prisma
+
           cat prisma/schema.prisma
 
       - name: Build Project Artifacts
