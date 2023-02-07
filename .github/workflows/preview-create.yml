@@ -22,7 +22,7 @@ jobs:
       - name: Generate Branch Preview URL
         id: generate-preview-hash
         run: |
-          BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-30)          
+          BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-30)
           echo "PREVIEW_SHA=$BRANCH_SHA" >> $GITHUB_OUTPUT
 
   current-preview-url:
@@ -103,11 +103,8 @@ jobs:
           DATABASE_URL_KEY=DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}
           DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
 
-          echo $ENV_VARS
-
           if [[ $ENV_VARS =~ $DB_REGEX ]]; then
-            EXISTING_URL=$(echo ${BASH_REMATCH[1]} | base64)            
-            
+            EXISTING_URL=$(echo -n ${BASH_REMATCH[1]} | base64)
             echo "URL=$EXISTING_URL" >> $GITHUB_OUTPUT
           fi
 
@@ -132,7 +129,6 @@ jobs:
           FLY_APPS=$(flyctl apps list)
 
           if [[ $FLY_APPS =~ ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} ]]; then
-              echo exists!
               echo "DATABASE_EXISTS=true" >> $GITHUB_OUTPUT
           fi
 
@@ -141,6 +137,7 @@ jobs:
         if: steps.check-database.outputs.DATABASE_EXISTS && !needs.preview-database-url.outputs.URl
         run: |
           flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
+
           echo "DATABASE_DELETED=true" >> $GITHUB_OUTPUT
 
       - name: Create database
@@ -167,7 +164,9 @@ jobs:
             echo Ops && exit 1
           fi
 
-          CONNECTION_STRING=$(echo $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | tr '\n' ' ' | sed "s/ //g")
+          CONNECTION_STRING=$(echo -n $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | tr '\n' ' ' | sed "s/ //g")
+
+          echo -n $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | sed "s/ //g"
 
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
@@ -231,7 +230,7 @@ jobs:
             DATABASE_URL_KEY="DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}"
 
             vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
-            echo $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
+            echo -n $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
 
             echo "DATABASE_URL=$NEW_DATABASE_URL" >> $GITHUB_ENV
           elif [[ $EXISTING_DATABASE_URL ]]; then
@@ -246,14 +245,13 @@ jobs:
           pnpx prisma generate
 
       - name: Run Migrations
-        run: |
-          echo $DATABASE_URL 
-          pnpx prisma migrate deploy
+        run: pnpx prisma migrate deploy
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
         run: |
           DOMAIN=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+
           echo "URL=${DOMAIN}" >> $GITHUB_OUTPUT
 
   alias-preview:
