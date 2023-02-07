@@ -169,11 +169,11 @@ jobs:
           echo "URL=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
       - name: Assign static IP
-        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
+        if: steps.create-database.outputs.URL
         run: flyctl ips allocate-v4 --app $BRANCH_NAME
 
       - name: Deploy Database update
-        if: steps.delete-database.outputs.DATABASE_DELETED || !needs.preview-database-url.outputs.URl
+        if: steps.create-database.outputs.URL
         run: |
           sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
 
