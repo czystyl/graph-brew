@@ -5,73 +5,10 @@ on:
     branches:
       - main
 
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-permissions:
-  pull-requests: write
-  issues: write
-
 jobs:
-  Deploy-Production:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 7
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install Vercel CLI
-        run: pnpm add vercel@latest --global
-
-      - name: Pull Vercel Preview  Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Get the connection string
-        id: connection-string
-        run: |
-          ENV_VARS=$(cat .vercel/.env.production.local)
-
-          DB_REGEX="DATABASE_URL=\"([^\"]*)\""
-
-          if [[ $ENV_VARS =~ $DB_REGEX ]]; then
-            EXISTING_URL=$(echo -n ${BASH_REMATCH[1]} | tr '\n' ' ' | sed "s/ //g")
-
-            echo "DATABASE_URL=$EXISTING_URL" >> $GITHUB_ENV
-          fi
-
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Generate Prisma client
-        run: pnpx prisma generate
-
-      - name: Run migrations
-        run: pnpx prisma migrate deploy
-
-      - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+  deploy-app:
+    name: Deploy App
+    uses: ./.github/workflows/deploy-app.yml
+    secrets: inherit
+    with:
+      destination: production

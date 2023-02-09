@@ -1,0 +1,165 @@
+name: Preview database
+
+on:
+  workflow_call:
+
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+jobs:
+  preview-hash:
+    name: Generate preview hash
+    uses: ./.github/workflows/preview-hash.yml
+
+  check-existing-database-url:
+    name: Check existing url
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.existing-database.outputs.url }}
+    needs:
+      - preview-hash
+    steps:
+      - name: Pull Vercel Preview  Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Get the connection string
+        id: existing-database
+        run: |
+          ENV_VARS=$(cat .vercel/.env.preview.local)
+          DB_REGEX="${{ needs.preview-hash.outputs.database-url-key }}=\"([^\"]*)\""
+
+          if [[ $ENV_VARS =~ $DB_REGEX ]]; then
+            DATABASE_URL=${BASH_REMATCH[1]}
+
+            if pg_isready -d "$DATABASE_URL" > /dev/null 2>&1; then
+                EXISTING_URL=$(echo -n $DATABASE_URL | base64 | tr '\n' ' ' | sed "s/ //g")
+                echo "url=$EXISTING_URL" >> $GITHUB_OUTPUT            
+            fi
+          fi
+
+  check-existing-database-instance:
+    name: Check database instance
+    runs-on: ubuntu-latest
+    needs:
+      - preview-hash
+    outputs:
+      exists: ${{ steps.check-database.outputs.exists }}
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Check if database exists
+        id: check-database
+        run: |
+          FLY_APPS=$(flyctl apps list)
+
+          if [[ $FLY_APPS =~ ${{ needs.preview-hash.outputs.hash }} ]]; then
+              echo "exists=true" >> $GITHUB_OUTPUT
+          fi
+
+  delete-database:
+    name: Delete database
+    runs-on: ubuntu-latest
+    needs:
+      - preview-hash
+      - check-existing-database-url
+      - check-existing-database-instance
+    if: needs.check-existing-database-instance.outputs.exists && !needs.check-existing-database-url.outputs.url
+    outputs:
+      deleted: ${{ steps.delete-database.outputs.deleted }}
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Delete database if needed
+        id: delete-database
+        run: |
+          flyctl apps destroy ${{ needs.preview-hash.outputs.hash }} --yes
+          echo "deleted=true" >> $GITHUB_OUTPUT
+
+  create-database:
+    name: Create database
+    runs-on: ubuntu-latest
+    needs:
+      - preview-hash
+      - check-existing-database-url
+      - check-existing-database-instance
+      - delete-database
+    if: |
+      always() && 
+      (
+        needs.delete-database.outputs.deleted || 
+        !needs.check-existing-database-instance.outputs.exists || 
+        !needs.check-existing-database-url.outputs.url
+      )
+    outputs:
+      url: ${{ steps.create-database.outputs.url }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Create database
+        id: create-database
+        run: |
+          PG_CREATE_COMMAND="
+            flyctl postgres create \
+              --name ${{ needs.preview-hash.outputs.hash }} \
+              --org product-brew \
+              --region waw \
+              --vm-size shared-cpu-1x - 256 \
+              --initial-cluster-size 1 \
+              --volume-size 1 \
+              --image-ref flyio/postgres:14
+          "
+
+          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND | tr '\n' ' ' | sed "s/ //g")
+          REGEX="Connectionstring:(.*)Save"
+
+          if [[ $PG_CREATE_OUTPUT =~ $REGEX ]]; then
+            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}
+          else
+            echo $PG_CREATE_OUTPUT
+            exit 1
+          fi
+
+          CONNECTION_STRING=$(echo -n $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" | base64 | tr '\n' ' ' | sed "s/ //g")
+
+          echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+
+      - name: Assign static IP
+        run: flyctl ips allocate-v4 --app ${{ needs.preview-hash.outputs.hash }}
+
+      - name: Prepare Fly config
+        run: sed "s/__APP_NAME_TEMPLATE__/${{ needs.preview-hash.outputs.hash }}/g" fly_postgres_template.toml > fly.toml
+
+      - name: Deploy database
+        run: flyctl deploy --image flyio/postgres:14 --auto-confirm
+
+  database-url:
+    name: Update Database URL
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - check-existing-database-url
+      - create-database
+      - preview-hash
+    steps:
+      - name: Pull Vercel Preview  Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Update Database URL
+        id: update-database-url
+        env:
+          DATABASE_URL_KEY: ${{ needs.preview-hash.outputs.database-url-key }}
+        run: |
+          NEW_DATABASE_URL=$(echo "${{ needs.create-database.outputs.url }}" | base64 -d )
+          EXISTING_DATABASE_URL=$(echo "${{ needs.check-existing-database-url.outputs.url }}" | base64 -d )
+
+          if [[ $NEW_DATABASE_URL ]]; then
+            vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+            echo -n $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
+
+            echo "using new database url"
+          elif [[ $EXISTING_DATABASE_URL ]]; then
+
+            echo "using existing database url"
+          else
+            echo "Missing DB connection string" && exit 1
+          fi
