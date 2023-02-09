@@ -54,8 +54,11 @@ jobs:
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Generate Prisma client
+        run: pnpx prisma generate
+
+      - name: Run migrations
+        run: pnpx prisma migrate deploy
+
       - name: Deploy Project Artifacts to Vercel
-        id: vercel-preview
-        run: |
-          DOMAIN=$(vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "VERCEL_PREVIEW_URL=${DOMAIN}" >> $GITHUB_OUTPUT
+        run: vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }}

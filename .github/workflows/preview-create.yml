@@ -182,10 +182,7 @@ jobs:
         run: |
           sed "s/__APP_NAME_TEMPLATE__/$BRANCH_NAME/g" fly_postgres_template.toml > fly.toml
 
-          flyctl deploy \
-            --app $BRANCH_NAME \
-            --image flyio/postgres:14 \
-            --auto-confirm
+          flyctl deploy --image flyio/postgres:14 --auto-confirm
 
   deploy-preview:
     name: Deploy preview environment
