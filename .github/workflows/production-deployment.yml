@@ -51,11 +51,27 @@ jobs:
       - name: Pull Vercel Preview  Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Get the connection string
+        id: connection-string
+        run: |
+          ENV_VARS=$(cat .vercel/.env.production.local)
+
+          DB_REGEX="DATABASE_URL=\"([^\"]*)\""
+
+          if [[ $ENV_VARS =~ $DB_REGEX ]]; then
+            EXISTING_URL=$(echo -n ${BASH_REMATCH[1]} | tr '\n' ' ' | sed "s/ //g")
+
+            echo "DATABASE_URL=$EXISTING_URL" >> $GITHUB_ENV
+          fi
+
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Generate Prisma client
+        run: pnpx prisma generate
+
+      - name: Run migrations
+        run: pnpx prisma migrate deploy
+
       - name: Deploy Project Artifacts to Vercel
-        id: vercel-preview
-        run: |
-          DOMAIN=$(vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "VERCEL_PREVIEW_URL=${DOMAIN}" >> $GITHUB_OUTPUT
+        run: vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
