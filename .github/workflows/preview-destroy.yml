@@ -15,27 +15,45 @@ permissions:
   issues: write
 
 jobs:
+  generate-preview-hash:
+    name: Generate preview URL
+    runs-on: ubuntu-latest
+    outputs:
+      PREVIEW_SHA: ${{ steps.generate-preview-hash.outputs.PREVIEW_SHA }}
+    steps:
+      - name: Generate Branch Preview URL
+        id: generate-preview-hash
+        run: |
+          BRANCH_SHA=$(echo ${{ github.head_ref }} | sha256sum | cut -c5-30)
+          echo "PREVIEW_SHA=$BRANCH_SHA" >> $GITHUB_OUTPUT
+
   remove-database:
     name: Remove preview database
     runs-on: ubuntu-latest
+    needs:
+      - generate-preview-hash
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Generate Branch Preview URL
-        id: generate-preview-url
-        run: |
-          BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-38)
-          echo "preview-sha=$BRANCH_SHA" >> $GITHUB_OUTPUT
 
       - name: Delete database
-        run: flyctl apps destroy $PREVIEW_SHA --yes
+        run: flyctl apps destroy ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes
+
+  clear-preview-env:
+    name: Remove database ENV
+    runs-on: ubuntu-latest
+    needs:
+      - generate-preview-hash
+    steps:
+      - uses: actions/checkout@v3
+      - run: vercel env rm DATABASE_URL_${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }} --yes --token=${{ secrets.VERCEL_TOKEN }} || true
 
   remove-preview:
     name: Remove preview environment
     runs-on: ubuntu-latest
+    needs:
+      - generate-preview-hash
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Find first vercel preview comment
+      - name: Find preview deployment comment
         uses: peter-evans/find-comment@v2
         if: success() && github.event.number
         id: preview-comment
@@ -43,26 +61,22 @@ jobs:
           issue-number: ${{ github.event.number }}
           body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
 
-      - name: Get current preview environment url
-        id: vercel-preview-url
+      - name: Get current preview url
+        id: preview-url
         run: |
-          REGEX="(<!-- __VERCEL_PREVIEW_URL: )(.*)( -->)"
+          REGEX="__PREVIEW_URL: (.*) -->"
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
           if [[ "$COMMENT_BODY" =~ $REGEX ]]; then
-              echo "VERCEL_PREVIEW_URL=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
-          else
-              echo "No previous Preview Environment. SKip!"
+              echo "URL=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Remove previous preview environment
+      - name: Destroy previous preview
         run: |
-          VERCEL_PREVIEW_URL="${{ steps.vercel-preview-url.outputs.VERCEL_PREVIEW_URL }}"
+          PREVIEW_URL="${{ steps.preview-url.outputs.URL }}"
 
-          if [ $VERCEL_PREVIEW_URL ]; then
-              vercel remove $VERCEL_PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
-          else
-              echo "No previous Preview Environment"
+          if [ $PREVIEW_URL ]; then
+              vercel remove $PREVIEW_URL --yes --token=${{ secrets.VERCEL_TOKEN }}
           fi
 
       - name: Create or update preview link comment

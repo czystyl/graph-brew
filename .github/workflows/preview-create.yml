@@ -22,7 +22,8 @@ jobs:
       - name: Generate Branch Preview URL
         id: generate-preview-hash
         run: |
-          BRANCH_SHA=$(echo ${{ steps.extract_branch.outputs.branch }} | sha256sum | cut -c5-30)
+
+          BRANCH_SHA=$(echo ${{ github.head_ref }}| sha256sum | cut -c5-30)
           echo "PREVIEW_SHA=$BRANCH_SHA" >> $GITHUB_OUTPUT
 
   current-preview-url:
@@ -45,6 +46,8 @@ jobs:
           REGEX="__PREVIEW_URL: (.*) -->"
           COMMENT_BODY="${{ steps.preview-comment.outputs.comment-body }}"
 
+          echo "$COMMENT_BODY"
+
           if [[ "$COMMENT_BODY" =~ $REGEX ]]; then
               echo "URL=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           fi
@@ -58,6 +61,7 @@ jobs:
           body: |
             ## 🏗️ Building preview environment...
             <!-- __PREVIEW_DEPLOYMENT__ -->
+            <!-- __PREVIEW_URL: ${{ steps.preview-url.outputs.url }} -->
 
   preview-database-url:
     name: Get database connection strong
@@ -274,7 +278,7 @@ jobs:
             ${{ needs.generate-preview-hash.outputs.PREVIEW_SHA }}.vercel.app \
             --token=${{ secrets.VERCEL_TOKEN }}
 
-  remove-old-preview:
+  destroy-previous-preview:
     name: Destroy previous preview
     runs-on: ubuntu-latest
     needs:
