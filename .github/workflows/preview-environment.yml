@@ -1,0 +1,85 @@
+name: Preview Environment
+
+on:
+  pull_request:
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  preview-hash:
+    name: Generate preview hash
+    uses: ./.github/workflows/preview-hash.yml
+
+  loading-comment:
+    name: Set deployment loading
+    runs-on: ubuntu-latest
+    outputs:
+      URL: ${{ steps.preview-url.outputs.URL }}
+    steps:
+      - name: Find preview deployment comment
+        uses: peter-evans/find-comment@v2
+        if: success() && github.event.number
+        id: preview-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+
+      - name: Create or update preview environment comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## 🏗️ Building preview environment...
+            <!-- __PREVIEW_DEPLOYMENT__ -->
+
+  preview-database:
+    name: Preview database
+    uses: ./.github/workflows/preview-database.yml
+    secrets: inherit
+
+  deploy-app:
+    name: Deploy preview App
+    uses: ./.github/workflows/deploy-app.yml
+    secrets: inherit
+    needs:
+      - preview-database
+    with:
+      destination: preview
+
+  preview-domain:
+    name: Assign preview domain
+    uses: ./.github/workflows/preview-domain.yml
+    secrets: inherit
+    needs:
+      - deploy-app
+    with:
+      preview-url: ${{ needs.deploy-app.outputs.url }}
+
+  deployment-url:
+    name: Set deployment URL
+    runs-on: ubuntu-latest
+    needs:
+      - deploy-app
+      - preview-hash
+    steps:
+      - name: Find preview environment comment to update
+        uses: peter-evans/find-comment@v2
+        if: success() && github.event.number
+        id: preview-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+
+      - name: Create or update preview link comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## [🚀 Your preview environment is ready!](https://${{ needs.preview-hash.outputs.hash }}.vercel.app)
+            <!-- __PREVIEW_DEPLOYMENT__ -->
