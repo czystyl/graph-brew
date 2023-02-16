@@ -1,4 +1,4 @@
-name: Clear Preview Deployment
+name: Destroy Preview Environment
 
 on:
   pull_request:
@@ -15,41 +15,25 @@ permissions:
   issues: write
 
 jobs:
-  preview-hash:
-    name: Generate preview hash
-    uses: ./.github/workflows/preview-hash.yml
-
-  remove-database:
-    name: Remove database
+  destroy-preview:
+    name: Destroy Preview Environment
     runs-on: ubuntu-latest
-    needs:
-      - preview-hash
-    steps:
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-
-      - name: Delete database
-        run: flyctl apps destroy ${{ needs.preview-hash.outputs.PREVIEW_SHA }} --yes || true
-
-  remove-database-environment:
-    name: Remove database env
-    runs-on: ubuntu-latest
-    needs:
-      - preview-hash
     steps:
       - uses: actions/checkout@v3
-      - run: vercel env rm DATABASE_URL_${{ needs.preview-hash.outputs.PREVIEW_SHA }} --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+      - run: bash .github/scripts/preview-hash.sh
+      - uses: superfly/flyctl-actions/setup-flyctl@master
 
-  remove-preview-environment:
-    name: Remove preview environment
-    runs-on: ubuntu-latest
-    needs:
-      - preview-hash
-    steps:
-      - name: Get preview URL
+      - name: Delete database instance
+        run: flyctl apps destroy $BRANCH_PREVIEW_HASH --yes || true
+
+      - name: Remove database env variable
+        run: vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+
+      - name: Get current preview URL
         id: preview-url
         run: |
           ALIASES=$(vercel alias ls --token=${{ secrets.VERCEL_TOKEN }})         
-          URL=$(echo "$ALIASES" | grep "${{ needs.preview-hash.outputs.hash }}.*" | awk '{print $1}')
+          URL=$(echo "$ALIASES" | grep "$BRANCH_PREVIEW_HASH.*" | awk '{print $1}')
 
           echo "url=$URL" >> $GITHUB_OUTPUT
 
