@@ -38,7 +38,7 @@ jobs:
       - name: Pull Vercel Preview  Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Get the connection string
+      - name: Get existing connection string
         id: check-existing-database
         run: |
           ENV_VARS=$(cat .vercel/.env.preview.local)
@@ -71,44 +71,12 @@ jobs:
 
       - name: Create database
         id: create-database
-        if: |
-          steps.delete-database.outputs.deleted || 
-          !steps.check-database-instance.outputs.exists || 
-          !steps.check-existing-database.outputs.url
+        if: ${{ !steps.check-database-instance.outputs.exists || !steps.check-existing-database.outputs.url }}
+
+        run: bash .github/scripts/create-database.sh
+
+      - name: Update DB environment variable
         run: |
-          PG_CREATE_COMMAND="
-            flyctl postgres create \
-              --name $BRANCH_PREVIEW_HASH \
-              --org product-brew \
-              --region waw \
-              --vm-size shared-cpu-1x - 256 \
-              --initial-cluster-size 1 \
-              --volume-size 1 \
-              --image-ref flyio/postgres:14
-          "
-
-          PG_CREATE_OUTPUT=$($PG_CREATE_COMMAND | tr '\n' ' ' | sed "s/ //g")
-          REGEX="Connectionstring:(.*)Save"
-
-          if [[ $PG_CREATE_OUTPUT =~ $REGEX ]]; then
-            INTERNAL_CONNECTION_STRING=${BASH_REMATCH[1]}
-          else
-            echo $PG_CREATE_OUTPUT && exit 1            
-          fi
-
-          CONNECTION_STRING=$(echo -n $INTERNAL_CONNECTION_STRING | sed "s/.internal:/.fly.dev:/g" )
-
-          flyctl ips allocate-v4 --app $BRANCH_PREVIEW_HASH
-          sed "s/__APP_NAME_TEMPLATE__/$BRANCH_PREVIEW_HASH/g" fly_postgres_template.toml > fly.toml
-          flyctl deploy --image flyio/postgres:14 --auto-confirm
-
-          echo "url=$CONNECTION_STRING" >> $GITHUB_OUTPUT
-
-      - name: Update Database URL
-        if: steps.create-database.outputs.url
-        run: |
-          NEW_DATABASE_URL=${{ steps.create-database.outputs.url }}
-
           if [[ $NEW_DATABASE_URL ]]; then
             vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
             echo -n $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
