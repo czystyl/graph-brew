@@ -1,13 +1,13 @@
-# Finance Brew
+# Finance Brew 💸
 
-## Pre requirements
+## 🏗️ Pre requirements
 
 Make sure that you have installed the following packages:
 
 1. [pnpm](https://pnpm.io/installation#using-homebrew)
 2. [docker](https://docs.docker.com/desktop/install/mac-install)
 
-## Getting started
+## 🏃 Getting started
 
 1. Install dependencies
 
@@ -33,7 +33,7 @@ Make sure that you have installed the following packages:
 4. Run migrations
 
    ```sh
-   pnpm prisma db push
+   pnpm prisma:migrate
    ```
 
 5. Run app
@@ -42,11 +42,32 @@ Make sure that you have installed the following packages:
    pnpm dev
    ```
 
-## Emails
+## 💽 Database migrations
 
-In the development environment, you can use Mailhot to see the emails the app sends. This prevents the SMTP server scoring from dropping.
+1. Run pending migrations
+
+   ```sh
+   pnpm prisma:migrate
+   ```
+
+2. Add migrations
+   ```sh
+   pnpm prisma:migrate --name migration_name
+   ```
+
+## 📧 Development Email service
+
+In the development environment, you can use [Mailhog](https://github.com/mailhog/MailHog) to see the emails the app sends. This prevents the SMTP server scoring from dropping.
 
 > Mailhog Web UI: [`localhost:8025`](http://localhost:8025/)
+
+## Database access
+
+You can use [Prisma Studio](https://www.prisma.io/studio) to browse and update your local database.
+
+```sh
+pnpm prisma:studio
+```
 
 ## Accesses
 
