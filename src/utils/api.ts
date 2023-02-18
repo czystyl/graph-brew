@@ -9,7 +9,21 @@ import { type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
 import superjson from "superjson";
 
 import { type AppRouter } from "../server/api/root";
-import { getBaseUrl } from "./getBaseUrl";
+
+function getBaseUrl() {
+  /* browser should use relative url */
+  if (typeof window !== "undefined") {
+    return "";
+  }
+
+  /* SSR should use vercel url */
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  /* dev SSR should use localhost */
+  return `http://localhost:${process.env.PORT ?? 3000}`;
+}
 
 export const api = createTRPCNext<AppRouter>({
   config() {

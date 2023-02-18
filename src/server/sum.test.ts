@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { sum } from "#server/sum";
+import { sum } from "#src/server/sum";
 
 test("#sum", () => {
   const a = Math.random() * 100;

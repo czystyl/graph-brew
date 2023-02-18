@@ -1,7 +1,5 @@
 # TODO:
 
-- Add Prisma Seeds
-- Add Prisma tests with DB
 - Prettier & Eslint
 - force absolute paths #server & #client
 

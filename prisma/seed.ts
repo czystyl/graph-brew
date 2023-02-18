@@ -1,19 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import createUser from "./users";
+
+const prisma = new PrismaClient({ log: ["query", "error"] });
 
 async function main() {
-  await prisma.user.upsert({
-    where: {
-      email: "rob@financebrew.io",
-    },
-    update: {},
-    create: {
-      email: "rob@financebrew.io",
-      name: "Rob",
-      emailVerified: new Date(),
-    },
-  });
+  await createUser(prisma);
 }
 
 main()
