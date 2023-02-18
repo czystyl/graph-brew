@@ -1,4 +1,10 @@
 {
+  // Required by ts-node and Prisma seed scripts
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
   "compilerOptions": {
     "target": "es2017",
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -16,7 +22,7 @@
     "jsx": "preserve",
     "incremental": true,
     "noUncheckedIndexedAccess": true,
-    "baseUrl": "./src",
+    "baseUrl": "./",
     "paths": {
       "#*": ["*"]
     }
