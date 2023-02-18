@@ -8,7 +8,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "SKIP_ENV_VALIDATION=false next lint",
+    "lint": "next lint",
     "type-check": "tsc --noEmit",
     "docker:up": "docker compose up -d",
     "docker:stop": "docker compose stop",
@@ -27,13 +27,14 @@
     "@trpc/server": "^10.11.1",
     "next": "13.1.6",
     "next-auth": "^4.19.2",
+    "nodemailer": "^6.9.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "superjson": "1.12.2",
-    "zod": "^3.20.6",
-    "nodemailer": "^6.9.1"
+    "zod": "^3.20.6"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^13.1.6",
     "@types/node": "^18.14.0",
     "@types/prettier": "^2.7.2",
     "@types/react": "^18.0.26",
@@ -45,5 +46,10 @@
     "prettier": "^2.8.4",
     "prisma": "^4.10.1",
     "typescript": "^4.9.5"
+  },
+  "nextBundleAnalysis": {
+    "budget": 358400,
+    "budgetPercentIncreaseRed": 20,
+    "showDetails": true
   }
 }

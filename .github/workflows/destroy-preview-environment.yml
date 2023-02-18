@@ -1,0 +1,60 @@
+name: Destroy Preview Environment
+
+on:
+  pull_request:
+    types:
+      - closed
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  destroy-preview:
+    name: Destroy Preview Environment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: bash .github/scripts/preview-hash.sh
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Delete database instance
+        run: flyctl apps destroy $BRANCH_PREVIEW_HASH --yes || true
+
+      - name: Remove database env variable
+        run: vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+
+      - name: Get current preview URL
+        id: preview-url
+        run: |
+          ALIASES=$(vercel alias ls --token=${{ secrets.VERCEL_TOKEN }})         
+          URL=$(echo "$ALIASES" | grep "$BRANCH_PREVIEW_HASH.*" | awk '{print $1}')
+
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Remove previous preview environment
+        if: steps.preview-url.outputs.url
+        run: vercel remove ${{ steps.preview-url.outputs.url }} --yes --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Find preview deployment comment
+        uses: peter-evans/find-comment@v2
+        if: success() && github.event.number
+        id: preview-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+
+      - name: Create or update preview link comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## ❌ Your preview environment was removed!
+            <!-- __PREVIEW_DEPLOYMENT__ -->

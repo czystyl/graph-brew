@@ -1,0 +1,117 @@
+name: Deploy App
+
+on:
+  workflow_call:
+    inputs:
+      destination:
+        type: string
+        required: true
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    name: Deploy App
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_DESTINATION_ARG: ${{ inputs.destination == 'production' && '--prod' || '' }}
+    steps:
+      - uses: actions/checkout@v3
+      - run: bash .github/scripts/preview-hash.sh
+
+      - name: Validate inputs
+        run: |
+          DESTINATION="${{ inputs.destination }}"
+
+          if [[ $DESTINATION != "production" && $DESTINATION != "preview" ]]; then
+              echo "Invalid 'destination' input. Choose ether from 'production' or 'preview'"
+              exit 1
+          fi
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          version: 7
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Vercel CLI
+        run: pnpm add vercel@latest --global
+
+      - name: Pull Vercel Preview  Environment Information
+        run: vercel pull --yes --environment=${{ inputs.destination }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Update schema.prisma
+        if: inputs.destination == 'preview'
+        run: sed -i "s/env(\"DATABASE_URL\")/env(\"$DATABASE_URL_KEY\")/g" prisma/schema.prisma
+
+      - name: Load environment variables
+        run: tail -n +2 .vercel/.env.${{ inputs.destination }}.local | sed 's/"//g'  >> $GITHUB_ENV
+
+      - name: Build Project Artifacts
+        run: vercel build $VERCEL_DESTINATION_ARG --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Generate Prisma client
+        run: pnpx prisma generate
+
+      - name: Run migrations
+        run: pnpx prisma migrate deploy
+
+      - name: Deploy Project Artifacts to Vercel
+        id: deploy
+        run: |
+          DOMAIN=$(vercel deploy $VERCEL_DESTINATION_ARG --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=${DOMAIN}" >> $GITHUB_OUTPUT
+
+      - name: Get current alias
+        id: current-alias
+        if: inputs.destination == 'preview'
+        run: |
+          ALIASES=$(vercel alias ls --token=${{ secrets.VERCEL_TOKEN }})         
+          URL=$(echo "$ALIASES" | grep "$BRANCH_PREVIEW_HASH.*" | awk '{print $1}')
+
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Alias current deployment
+        if: inputs.destination == 'preview'
+        run: vercel alias ${{ steps.deploy.outputs.url }} $BRANCH_PREVIEW_HASH.vercel.app --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Remove previous preview environment
+        if: steps.current-alias.outputs.url && inputs.destination == 'preview'
+        run: vercel remove ${{ steps.current-alias.outputs.url }} --yes --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Find preview environment comment to update
+        uses: peter-evans/find-comment@v2
+        if: success() && github.event.number && inputs.destination == 'preview'
+        id: preview-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+
+      - name: Create or update preview link comment
+        uses: peter-evans/create-or-update-comment@v2
+        if: inputs.destination == 'preview'
+        with:
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## [🚀 Your preview environment is ready!](https://$BRANCH_PREVIEW_HASH.vercel.app)
+            <!-- __PREVIEW_DEPLOYMENT__ -->

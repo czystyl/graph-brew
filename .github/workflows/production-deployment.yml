@@ -1,0 +1,14 @@
+name: Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-app:
+    name: Deploy App
+    uses: ./.github/workflows/deploy-app.yml
+    secrets: inherit
+    with:
+      destination: production

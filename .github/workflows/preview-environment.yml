@@ -1,0 +1,23 @@
+name: Preview Environment
+
+on:
+  pull_request:
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  preview-database:
+    name: Preview
+    uses: ./.github/workflows/preview-database.yml
+    secrets: inherit
+
+  deploy-app:
+    name: Preview
+    uses: ./.github/workflows/deploy-app.yml
+    secrets: inherit
+    needs:
+      - preview-database
+    with:
+      destination: preview

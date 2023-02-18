@@ -1,0 +1,82 @@
+name: Preview
+
+on:
+  workflow_call:
+
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+jobs:
+  preview-database:
+    name: Database
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.existing-database.outputs.url }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: bash .github/scripts/preview-hash.sh
+
+      - name: Find preview deployment comment
+        uses: peter-evans/find-comment@v2
+        if: success() && github.event.number
+        id: preview-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: <!-- __PREVIEW_DEPLOYMENT__ -->
+
+      - name: Create or update preview environment comment
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ steps.preview-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body: |
+            ## 🏗️ Building preview environment...
+            <!-- __PREVIEW_DEPLOYMENT__ -->
+
+      - name: Pull Vercel Preview  Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Get existing connection string
+        id: check-existing-database
+        run: |
+          ENV_VARS=$(cat .vercel/.env.preview.local)
+          DB_REGEX="$DATABASE_URL_KEY=\"([^\"]*)\""
+
+          if [[ $ENV_VARS =~ $DB_REGEX ]]; then
+              DATABASE_URL=${BASH_REMATCH[1]}
+          fi
+
+          if pg_isready -d "$DATABASE_URL" >/dev/null 2>&1; then
+              EXISTING_URL=$(echo -n $DATABASE_URL | base64 | tr '\n' ' ' | sed "s/ //g")
+              echo "url=$EXISTING_URL" >>$GITHUB_OUTPUT
+          fi
+
+      - name: Check if database exists
+        id: check-database-instance
+        run: |
+          FLY_APPS=$(flyctl apps list)
+
+          if [[ $FLY_APPS =~ $BRANCH_PREVIEW_HASH ]]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Delete database if needed
+        id: delete-database
+        if: steps.check-database-instance.outputs.exists && !steps.check-existing-database.outputs.url
+        run: |
+          flyctl apps destroy $BRANCH_PREVIEW_HASH --yes
+          echo "deleted=true" >> $GITHUB_OUTPUT
+
+      - name: Create database
+        id: create-database
+        if: ${{ !steps.check-database-instance.outputs.exists || !steps.check-existing-database.outputs.url }}
+        run: bash .github/scripts/create-database.sh
+
+      - name: Update DB environment variable
+        run: |
+          if [[ $NEW_DATABASE_URL ]]; then
+            vercel env rm $DATABASE_URL_KEY --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+            echo -n $NEW_DATABASE_URL | vercel env add $DATABASE_URL_KEY preview --token=${{ secrets.VERCEL_TOKEN }}
+          fi
