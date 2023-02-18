@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest --coverage",
     "type-check": "tsc --noEmit",
     "docker:up": "docker compose up -d",
     "docker:stop": "docker compose stop",
@@ -31,6 +32,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "superjson": "1.12.2",
+    "vitest": "^0.28.5",
     "zod": "^3.20.6"
   },
   "devDependencies": {
@@ -41,11 +43,14 @@
     "@types/react-dom": "^18.0.10",
     "@typescript-eslint/eslint-plugin": "^5.52.0",
     "@typescript-eslint/parser": "^5.52.0",
+    "@vitest/coverage-c8": "^0.28.5",
     "eslint": "^8.34.0",
     "eslint-config-next": "13.1.6",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
     "prettier": "^2.8.4",
     "prisma": "^4.10.1",
-    "typescript": "^4.9.5"
+    "typescript": "^4.9.5",
+    "vite-tsconfig-paths": "^4.0.5"
   },
   "nextBundleAnalysis": {
     "budget": 358400,

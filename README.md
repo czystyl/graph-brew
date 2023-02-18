@@ -1,3 +1,10 @@
+# TODO:
+
+- Add Prisma Seeds
+- Add Prisma tests with DB
+- Prettier & Eslint
+- force absolute paths #server & #client
+
 # Finance Brew 💸
 
 ## 🏗️ Pre requirements
@@ -61,7 +68,7 @@ In the development environment, you can use [Mailhog](https://github.com/mailhog
 
 > Mailhog Web UI: [`localhost:8025`](http://localhost:8025/)
 
-## Database access
+## 🤓 Database access
 
 You can use [Prisma Studio](https://www.prisma.io/studio) to browse and update your local database.
 
@@ -69,12 +76,20 @@ You can use [Prisma Studio](https://www.prisma.io/studio) to browse and update y
 pnpm prisma:studio
 ```
 
-## Accesses
+## 😌 Troubleshoot
+
+1. Eslint shows unexpected Typescript errors:
+
+   ```
+   Restart your Eslint server
+   ```
+
+## 🔐 General Accesses
 
 All the accesses are done via Google groups. To access them, you need to add your email to the group. In some cases, you'll need to have a valid password.
 
-- Vercel - engineering@productbrew.com
-- Sendgrid - finance-brew-eng@productbrew.com
+- Vercel - `engineering@productbrew.com`
+- Sendgrid - `finance-brew-eng@productbrew.com`
 
 ## Learn More
 
@@ -82,3 +97,4 @@ All the accesses are done via Google groups. To access them, you need to add you
 - [Auth.js](https://authjs.dev/)
 - [Prisma](https://prisma.io)
 - [tRPC](https://trpc.io)
+- [Vitest](https://vitest.dev/)
